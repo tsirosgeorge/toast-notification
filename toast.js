@@ -4,7 +4,7 @@
     // Dynamically load the external CSS file
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "toast.css"; // Update path as needed
+    link.href = "/assets/css/toast.css"; // Update path as needed
     document.head.appendChild(link);
 
     const toast = function (message, options = {}) {
@@ -39,13 +39,13 @@
             img.style.objectFit = 'contain';
 
             if (type === 'success') {
-                img.src = 'success.gif';
+                img.src = '/assets/img/success.gif';
             } else if (type === 'error') {
-                img.src = 'error.gif';
+                img.src = '/assets/img/error.gif';
             } else if (type === 'info') {
-                img.src = 'info.gif';
+                img.src = '/assets/img/info.gif';
             } else if (type === 'warning') {
-                img.src = 'warning.gif';
+                img.src = '/assets/img/warning.gif';
             }
 
             iconElement.appendChild(img);
@@ -224,13 +224,13 @@
             img.style.objectFit = 'contain';
 
             if (type === 'success') {
-                img.src = 'success.gif';
+                img.src = '/assets/img/success.gif';
             } else if (type === 'error') {
-                img.src = 'error.gif';
+                img.src = '/assets/img/error.gif';
             } else if (type === 'info') {
-                img.src = 'info.gif';
+                img.src = '/assets/img/info.gif';
             } else if (type === 'warning') {
-                img.src = 'warning.gif';
+                img.src = '/assets/img/warning.gif';
             }
 
             iconElement.appendChild(img);
