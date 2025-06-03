@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="toast.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@1.0.0/toast.min.js"></script>
     <title>Toast Notification Test</title>
 </head>
 <body>
-    <button onclick="toast.success('This is a success message!')">Show Toast</button>
-
-    <script src="toast.js"></script>
+    <button onclick="toast('This is a success message!', {type: 'success'})">Show Toast</button>
 </body>
 </html>

@@ -1,0 +1,24 @@
+{
+  "name": "@tsirosgeorge/toastnotification",
+  "version": "2.0.0",
+  "description": "a toast notification plugin",
+  "main": "toast.min.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tsirosgeorge/toast-notification.git"
+  },
+  "keywords": [
+    "toast",
+    "notification",
+    "alert"
+  ],
+  "author": "George Tsiros",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tsirosgeorge/toast-notification/issues"
+  },
+  "homepage": "https://github.com/tsirosgeorge/toast-notification#readme"
+}
