@@ -30,13 +30,13 @@ npm i @tsirosgeorge/toastnotification
 ``` 
 
 ## 💡 Usage instructions
-    🔹 Basic Toast
-```html
+### 🔹 Basic Toast
+```javascript
 toast('Hello world!');
 ```
 
-    🔸 With Options
-```html
+### 🔸 With Options
+```javascript
 toast('Data saved successfully!', {
   type: 'success',
   position: 'top-left',
