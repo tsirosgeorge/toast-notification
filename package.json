@@ -1,6 +1,6 @@
 {
   "name": "@tsirosgeorge/toastnotification",
-  "version": "2.0.1",
+  "version": "2.0.3",
   "description": "a toast notification plugin",
   "main": "toast.min.js",
   "scripts": {
@@ -16,7 +16,11 @@
     "alert"
   ],
   "author": "George Tsiros",
-  "license": "ISC",
+  "license": "UNLICENSED",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "bugs": {
     "url": "https://github.com/tsirosgeorge/toast-notification/issues"
   },

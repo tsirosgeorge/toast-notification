@@ -63,3 +63,24 @@ toast('Data saved successfully!', {
 | `onClick`    | `function` or `null` | `null` | Callback function executed when the toast is clicked.                                        |
 | `onShow`     | `function` or `null` | `null` | Callback function executed when the toast appears (after it's added to the DOM and shown).   |
 | `onDismiss`  | `function` or `null` | `null` | Callback function executed when the toast is dismissed and removed from the DOM.             |
+
+
+## 📝 License
+
+© 2025 George Tsiros. All rights reserved.
+
+This software is provided for **use only as distributed** by the author.
+
+### ❌ Restrictions
+- Modifying or creating derivative works is **not allowed**.
+- Redistributing, sublicensing, or reselling the software is **prohibited**.
+- Reverse engineering or extracting the source code is **strictly forbidden**.
+
+### ⚠️ Disclaimer
+This software is provided "as is", without warranty of any kind. Use at your own risk.
+
+📬 For commercial licensing or inquiries, please contact the author at: tsirosgeorge@pm.me
+
+---
+
+**Note:** This package is marked as `UNLICENSED` in `package.json` to reflect these restrictions.
