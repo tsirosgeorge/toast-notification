@@ -1,8 +1,19 @@
-# Minify the toast.js file using terser 
-# terser toast.js --compress --mangle --output toast.min.js
+# 🔔 ToastNotification
 
-# Use npm publish to publish the package
-# npm publish
+A lightweight, customizable, and dependency-free toast notification system written in vanilla JavaScript.
 
-# Include the following script in your HTML file to use the toast functionality
-# <script src="https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@2.0.0/toast.min.js"></script>
+---
+
+## ⚙️ Minify the `toast.js` File
+
+Use [Terser](https://github.com/terser/terser) to minify your script:
+
+```bash
+terser toast.js --compress --mangle --output toast.min.js
+
+## 📦 Publish the package to NPM
+
+```bash
+npm login
+npm publish --access public
+```
