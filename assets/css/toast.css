@@ -73,7 +73,7 @@
     /* Start from below */
     transition: opacity 0.5s ease, transform 0.5s ease;
     /* Apply transition for opacity and position */
-    width: 250px!important;
+    width: auto!important;
 }
 
 /* Show toast with animation */
