@@ -39,14 +39,17 @@
             img.style.height = '30px';
             img.style.objectFit = 'contain';
 
+            const baseUrl = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@latest/assets/img/';
+            const timestamp = new Date().getTime(); // 🔄 force refresh
+
             if (type === 'success') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@latest/assets/img/success.gif';
+                img.src = `${baseUrl}success.gif?t=${timestamp}`;
             } else if (type === 'error') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@latest/assets/img/error.gif';
+                img.src = `${baseUrl}error.gif?t=${timestamp}`;
             } else if (type === 'info') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@latest/assets/img/info.gif';
+                img.src = `${baseUrl}info.gif?t=${timestamp}`;
             } else if (type === 'warning') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@latest/assets/img/warning.gif';
+                img.src = `${baseUrl}warning.gif?t=${timestamp}`;
             }
 
             iconElement.appendChild(img);
