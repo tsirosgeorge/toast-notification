@@ -4,7 +4,7 @@
     // Dynamically load the external CSS file
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@latest/assets/css/toast.css"; // Update path as needed
+    link.href = "https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@latest/assets/css/toast.min.css";// Update path as needed
     document.head.appendChild(link);
 
     const toast = function (message, options = {}) {
@@ -21,14 +21,14 @@
         } = options;
 
         const toastElement = document.createElement('div');
-        toastElement.className = `toast toast-${type}`;
+        toastElement.className = `ts-toast ts-toast-${type}`;
         toastElement.style.animation = `${animation} 0.5s ease`; // Default fade animation
         toastElement.style.flexDirection = 'row-reverse';
         toastElement.style.justifyContent = 'flex-end';
 
         // Create Icon Element
         const iconElement = document.createElement('span');
-        iconElement.className = 'toast-icon';
+        iconElement.className = 'ts-toast-icon';
 
         if (icon) {
             iconElement.textContent = icon;
@@ -53,7 +53,7 @@
 
         // Create Body
         const toastBody = document.createElement('div');
-        toastBody.className = 'toast-body';
+        toastBody.className = 'ts-toast-body';
         toastBody.innerHTML = message; // Allow HTML content in message
         toastElement.appendChild(toastBody);
 
@@ -61,15 +61,15 @@
         let loader = null;
         if (showLoader) {
             loader = document.createElement('div');
-            loader.className = 'toast-loader';
+            loader.className = 'ts-toast-loader';
             toastElement.appendChild(loader);
         }
 
         // Container
-        let container = document.querySelector(`.toast-notification-container.${position}`);
+        let container = document.querySelector(`.ts-toast-container.${position}`);
         if (!container) {
             container = document.createElement('div');
-            container.className = `toast-notification-container ${position}`;
+            container.className = `ts-toast-container ${position}`;
             document.body.appendChild(container);
         }
 
@@ -90,7 +90,7 @@
             setTimeout(() => {
                 loader.classList.add('done');
                 loader.remove();
-                if (!toastElement.querySelector('.toast-icon img')) {
+                if (!toastElement.querySelector('.ts-toast-icon img')) {
                     toastElement.appendChild(iconElement); // Add icon only if not present
                 }
             }, 2000); // Simulate a loading period of 2 seconds
@@ -196,13 +196,13 @@
         } = options;
 
         // Remove old loader (if any)
-        const oldLoader = toastElement.querySelector('.toast-loader');
-        const oldIcon = toastElement.querySelector('.toast-icon');
+        const oldLoader = toastElement.querySelector('.ts-toast-loader');
+        const oldIcon = toastElement.querySelector('.ts-toast-icon');
         if (oldLoader) oldLoader.remove();
 
         // Update toast class and message
         toastElement.className = `toast toast-${type} show ${position}`;
-        const toastBody = toastElement.querySelector('.toast-body');
+        const toastBody = toastElement.querySelector('.ts-toast-body');
         if (toastBody) {
             toastBody.innerHTML = message;
         }
@@ -305,13 +305,13 @@
             toastElement.classList.add('show');
         });
 
-        const loader = toastElement.querySelector('.toast-loader');
-        let iconElement = toastElement.querySelector('.toast-icon');
+        const loader = toastElement.querySelector('.ts-toast-loader');
+        let iconElement = toastElement.querySelector('.ts-toast-icon');
 
         // Ensure the iconElement is created and appended if it doesn't exist
         if (!iconElement) {
             iconElement = document.createElement('span');
-            iconElement.className = 'toast-icon';
+            iconElement.className = 'ts-toast-icon';
             toastElement.appendChild(iconElement);
         }
 

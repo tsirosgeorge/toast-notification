@@ -1,11 +1,21 @@
 {
   "name": "@tsirosgeorge/toastnotification",
-  "version": "3.0.0",
+  "version": "1.0.0",
   "description": "a toast notification plugin",
   "main": "toast.min.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:css": "cleancss -o assets/css/toast.min.css assets/css/toast.css",
+    "build:js": "terser toast.js --compress --mangle --output toast.min.js",
+    "build": "npm run build:css && npm run build:js",
+    "prepublishOnly": "npm run build"
   },
+  "files": [
+    "toast.js",
+    "toast.min.js",
+    "assets/css/toast.css",
+    "assets/css/toast.min.css"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tsirosgeorge/toast-notification.git"
@@ -24,5 +34,9 @@
   "bugs": {
     "url": "https://github.com/tsirosgeorge/toast-notification/issues"
   },
-  "homepage": "https://github.com/tsirosgeorge/toast-notification#readme"
+  "homepage": "https://github.com/tsirosgeorge/toast-notification#readme",
+  "devDependencies": {
+    "clean-css-cli": "^5.6.3",
+    "terser": "^5.40.0"
+  }
 }
