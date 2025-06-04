@@ -1,6 +1,6 @@
 {
   "name": "@tsirosgeorge/toastnotification",
-  "version": "1.0.0",
+  "version": "5.0.0",
   "description": "a toast notification plugin",
   "main": "toast.min.js",
   "scripts": {

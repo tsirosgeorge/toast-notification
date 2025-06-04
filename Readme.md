@@ -4,21 +4,6 @@ A lightweight, customizable, and dependency-free toast notification system writt
 
 ---
 
-## ⚙️ Minify the `toast.js` File
-
-Use [Terser](https://github.com/terser/terser) to minify your script:
-
-```bash
-terser toast.js --compress --mangle --output toast.min.js
-```
-
-## 🚀 Publish the package to NPM
-
-```bash
-npm login
-npm publish
-```
-
 ## 📦 Include package via cdn
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@{LATEST VERSION GOES HERE}/toast.min.js"></script>
