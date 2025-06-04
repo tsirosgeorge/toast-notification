@@ -4,7 +4,7 @@
     // Dynamically load the external CSS file
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.0.2/assets/css/toast.min.css";// Update path as needed
+    link.href = "https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.0.5/assets/css/toast.min.css";// Update path as needed
     document.head.appendChild(link);
 
     const toast = function (message, options = {}) {
