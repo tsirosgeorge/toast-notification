@@ -1,5 +1,10 @@
 # Changelog
 
+## [5.0.3] - 2025-06-04
+
+### Changed
+- Fixed default icons
+
 ## [5.0.2] - 2025-06-04
 
 ### Changed

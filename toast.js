@@ -34,6 +34,7 @@
             iconElement.textContent = icon;
         } else {
             const img = document.createElement('img');
+            img.src = '';
             img.style.width = '30px';
             img.style.height = '30px';
             img.style.objectFit = 'contain';
