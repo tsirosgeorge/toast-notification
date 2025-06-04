@@ -66,10 +66,10 @@
         }
 
         // Container
-        let container = document.querySelector(`.toast-container.${position}`);
+        let container = document.querySelector(`.toast-notification-container.${position}`);
         if (!container) {
             container = document.createElement('div');
-            container.className = `toast-container ${position}`;
+            container.className = `toast-notification-container ${position}`;
             document.body.appendChild(container);
         }
 
