@@ -39,7 +39,7 @@ toast('Data saved successfully!', {
 
 | Option       | Type       | Default       | Description                                                                                   |
 |--------------|------------|---------------|-----------------------------------------------------------------------------------------------|
-| `position`   | `string`   | `'top-right'` | Position of the toast container. Possible values: `'top-left'`, `'top-right'`, `'bottom-left'`, `'bottom-right'`. |
+| `position`   | `string`   | `'top-right'` | Position of the toast container. Possible values: `'top-left'`, `'top-right'`, `'bottom-left'`, `'bottom-right'`, `top-center`. |
 | `animation`  | `string`   | `'slide-right'` | Animation effect applied to the toast when it shows and hides. Examples: `'fade'`, `'slide-right'`, `'slide-left'`, `'slide-top'`, `'slide-bottom'`, `'zoom-in'`. The hide animation reverses the show animation automatically. |
 | `type`       | `string`   | `'info'`      | Type of toast, controlling icon and styling. Possible values: `'info'`, `'success'`, `'error'`, `'warning'`. |
 | `duration`   | `number`   | `3000`        | Duration in milliseconds before the toast automatically dismisses.                            |
