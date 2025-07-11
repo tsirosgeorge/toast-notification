@@ -1,5 +1,10 @@
 # Changelog
 
+## [5.0.6] - 2025-07-11
+
+### Changed
+- Added position Top-Center
+
 ## [5.0.5] - 2025-06-04
 
 ### Changed
