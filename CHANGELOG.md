@@ -1,5 +1,10 @@
 # Changelog
 
+## [5.0.7] - 2025-08-15
+
+### Changed
+- Reduced the size of the gifs
+
 ## [5.0.6] - 2025-07-11
 
 ### Changed
