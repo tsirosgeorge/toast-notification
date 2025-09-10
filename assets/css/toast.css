@@ -76,6 +76,37 @@
     width: auto!important;
 }
 
+/* When toast is used outside a container (e.g., confirm in overlay), keep card styles */
+.ts-toast.ts-toast-confirm {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--toast-bg, #fff);
+    color: var(--toast-color, #000);
+    border: 1px solid var(--toast-border, #e5e7eb);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: var(--toast-shadow, 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1));
+}
+
+.ts-toast.ts-toast-confirm .ts-toast-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+}
+
+.ts-toast.ts-toast-confirm .ts-toast-body { text-align: center; }
+
+.ts-toast-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 12px;
+}
+
 /* Show toast with animation */
 .ts-toast-container .ts-toast.show {
     opacity: 1;
@@ -260,4 +291,26 @@
     animation-duration: 0.5s;
     animation-timing-function: ease-in-out;
     animation-fill-mode: forwards;
+}
+
+/* Overlay for confirm dialogs */
+.ts-toast-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5); /* darker backdrop */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2147483646;
+}
+
+/* Tiny utility: flex icon container */
+.d-flex {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Prevent scroll behind confirm overlay */
+body.ts-toast-no-scroll {
+    overflow: hidden;
 }

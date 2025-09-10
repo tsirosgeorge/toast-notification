@@ -1,5 +1,19 @@
 # Changelog
 
+## [5.1.0] - 2025-09-10
+
+### Added
+- Confirm mode (SweetAlert-like) with Promise and callback APIs.
+- Overlay support with optional close button (×) and overlay click to cancel.
+- Customizable confirm/cancel button colors.
+- Title option above confirm text; improved confirm layout and icon badge.
+- New positions: top-center and bottom-center; smart default animations.
+- Playground in `index.html` to test all options.
+
+### Fixed
+- Loading flow: sticky during loading; success shown only on update.
+- Darker overlay and consistent icon classes.
+
 ## [5.0.7] - 2025-08-15
 
 ### Changed

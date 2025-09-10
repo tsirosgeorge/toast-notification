@@ -1,14 +1,15 @@
 {
   "name": "@tsirosgeorge/toastnotification",
-  "version": "5.0.7",
+  "version": "5.1.0",
   "description": "a toast notification plugin",
   "main": "toast.min.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build:css": "cleancss -o assets/css/toast.min.css assets/css/toast.css",
-    "build:js": "terser toast.js --compress --mangle --output toast.min.js",
-    "build": "npm run build:css && npm run build:js",
-    "prepublishOnly": "npm run build"
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "build:css": "cleancss -o assets/css/toast.min.css assets/css/toast.css",
+      "build:js": "terser toast.js --compress --mangle --output toast.min.js",
+      "build": "npm run build:css && npm run build:js",
+      "prepublishOnly": "npm run build",
+      "release": "npm version && git push origin main --follow-tags && npm publish --access public"
   },
   "files": [
     "toast.js",
