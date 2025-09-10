@@ -1,6 +1,6 @@
 {
   "name": "@tsirosgeorge/toastnotification",
-  "version": "5.1.0",
+  "version": "5.1.1",
   "description": "a toast notification plugin",
   "main": "toast.min.js",
   "scripts": {
@@ -15,7 +15,8 @@
     "toast.js",
     "toast.min.js",
     "assets/css/toast.css",
-    "assets/css/toast.min.css"
+  "assets/css/toast.min.css",
+  "assets/img/"
   ],
   "repository": {
     "type": "git",

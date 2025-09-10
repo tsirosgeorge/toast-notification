@@ -14,6 +14,12 @@
 - Loading flow: sticky during loading; success shown only on update.
 - Darker overlay and consistent icon classes.
 
+## [5.1.1] - 2025-09-10
+
+### Fixed
+- Include `assets/img/` in npm package so GIF icons load from CDN.
+- Pin CDN URLs in code/docs to 5.1.1.
+
 ## [5.0.7] - 2025-08-15
 
 ### Changed
