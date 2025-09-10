@@ -20,6 +20,12 @@
 - Include `assets/img/` in npm package so GIF icons load from CDN.
 - Pin CDN URLs in code/docs to 5.1.1.
 
+## [5.2.0] - 2025-09-10
+
+### Changed
+- Namespaced all animation keyframes and state classes to `ts-toast-*` to avoid host-site CSS conflicts.
+- Backwards-compatible mapping for animation option values.
+
 ## [5.0.7] - 2025-08-15
 
 ### Changed

@@ -4,7 +4,7 @@
     // Dynamically load the external CSS file
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.1.1/assets/css/toast.min.css";// Pinned to current release
+    link.href = "https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/css/toast.min.css";// Pinned to current release
     document.head.appendChild(link);
 
     // Inject minimal styles for confirm actions and overlay (kept tiny to avoid breaking existing CSS)
@@ -146,7 +146,7 @@
             img.style.height = '30px';
             img.style.objectFit = 'contain';
 
-            const baseUrl = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.1.1/assets/img/';
+            const baseUrl = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/img/';
             const timestamp = new Date().getTime(); // 🔄 force refresh
 
             if (type === 'success') {
@@ -414,13 +414,13 @@
             img.style.objectFit = 'contain';
 
             if (type === 'success') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.1.1/assets/img/success.gif';
+                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/img/success.gif';
             } else if (type === 'error') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.1.1/assets/img/error.gif';
+                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/img/error.gif';
             } else if (type === 'info') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.1.1/assets/img/info.gif';
+                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/img/info.gif';
             } else if (type === 'warning') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.1.1/assets/img/warning.gif';
+                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/img/warning.gif';
             }
 
             iconElement.appendChild(img);
