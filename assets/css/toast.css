@@ -108,14 +108,14 @@
 }
 
 /* Show toast with animation */
-.ts-toast-container .ts-toast.show {
+.ts-toast-container .ts-toast.ts-toast-show {
     opacity: 1;
     transform: translateY(0);
     /* Move to final position */
 }
 
 /* Animations for different effects */
-@keyframes slide-left {
+@keyframes ts-toast-slide-left {
     from {
         transform: translateX(-100%);
     }
@@ -125,7 +125,7 @@
     }
 }
 
-@keyframes slide-right {
+@keyframes ts-toast-slide-right {
     from {
         transform: translateX(100%);
     }
@@ -135,7 +135,7 @@
     }
 }
 
-@keyframes slide-top {
+@keyframes ts-toast-slide-top {
     from {
         transform: translateY(-100%);
     }
@@ -145,7 +145,7 @@
     }
 }
 
-@keyframes slide-bottom {
+@keyframes ts-toast-slide-bottom {
     from {
         transform: translateY(100%);
     }
@@ -155,7 +155,7 @@
     }
 }
 
-@keyframes zoom-in {
+@keyframes ts-toast-zoom-in {
     from {
         transform: scale(0);
     }
@@ -165,7 +165,12 @@
     }
 }
 
-@keyframes flip {
+@keyframes ts-toast-zoom-out {
+    from { transform: scale(1); }
+    to { transform: scale(0); }
+}
+
+@keyframes ts-toast-flip {
     from {
         transform: rotateY(90deg);
     }
@@ -200,12 +205,12 @@
     border: 3px solid #f3f3f3;
     border-top: 3px solid var(--toast-loader-color, #66ee78);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    animation: ts-toast-spin 1s linear infinite;
     /* Continuous spinning */
 }
 
 /* Keyframe for spinning effect */
-@keyframes spin {
+@keyframes ts-toast-spin {
     0% {
         transform: rotate(0deg);
     }
@@ -230,7 +235,7 @@
 }
 
 /* Show the icon after the loader has completed */
-.ts-toast-container .ts-toast.show .ts-toast-icon {
+.ts-toast-container .ts-toast.ts-toast-show .ts-toast-icon {
     opacity: 1;
     /* Fade in the icon */
 }
@@ -246,7 +251,7 @@
 }
 
 /* Reverse Slide-out Animations */
-@keyframes slide-top-reverse {
+@keyframes ts-toast-slide-top-reverse {
     from {
         transform: translateY(0);
     }
@@ -256,7 +261,7 @@
     }
 }
 
-@keyframes slide-bottom-reverse {
+@keyframes ts-toast-slide-bottom-reverse {
     from {
         transform: translateY(0);
     }
@@ -266,7 +271,7 @@
     }
 }
 
-@keyframes slide-left-reverse {
+@keyframes ts-toast-slide-left-reverse {
     from {
         transform: translateX(0);
     }
@@ -276,7 +281,7 @@
     }
 }
 
-@keyframes slide-right-reverse {
+@keyframes ts-toast-slide-right-reverse {
     from {
         transform: translateX(0);
     }
@@ -287,7 +292,7 @@
 }
 
 /* Slide-out when removed */
-.ts-toast-container .ts-toast.slide-out {
+.ts-toast-container .ts-toast.ts-toast-slide-out {
     animation-duration: 0.5s;
     animation-timing-function: ease-in-out;
     animation-fill-mode: forwards;
@@ -305,10 +310,8 @@
 }
 
 /* Tiny utility: flex icon container */
-.d-flex {
-    display: inline-flex;
-    align-items: center;
-}
+/* Scoped utility to avoid conflicts */
+.ts-toast-d-flex { display: inline-flex; align-items: center; }
 
 /* Prevent scroll behind confirm overlay */
 body.ts-toast-no-scroll {

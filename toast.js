@@ -75,11 +75,22 @@
 
         // Pick an animation intelligently when one wasn't explicitly provided
         const resolvedAnimation = (typeof options.animation === 'string' && options.animation.trim())
-            ? options.animation.trim()
-            : (isConfirm ? 'zoom-in' : (position.startsWith('top') ? 'slide-top'
-                : position.startsWith('bottom') ? 'slide-bottom'
-                : position.endsWith('left') ? 'slide-left'
-                : 'slide-right'));
+            ? (function mapAnim(a){
+                const m = {
+                    'slide-top':'ts-toast-slide-top',
+                    'slide-bottom':'ts-toast-slide-bottom',
+                    'slide-left':'ts-toast-slide-left',
+                    'slide-right':'ts-toast-slide-right',
+                    'zoom-in':'ts-toast-zoom-in',
+                    'zoom-out':'ts-toast-zoom-out',
+                    'flip':'ts-toast-flip'
+                };
+                return m[a] || a;
+            })(options.animation.trim())
+            : (isConfirm ? 'ts-toast-zoom-in' : (position.startsWith('top') ? 'ts-toast-slide-top'
+                : position.startsWith('bottom') ? 'ts-toast-slide-bottom'
+                : position.endsWith('left') ? 'ts-toast-slide-left'
+                : 'ts-toast-slide-right'));
 
         // helper: remove with reverse animation and cleanup
         const removeWithAnimation = (el, callback) => {
@@ -88,25 +99,25 @@
 
             // Determine the reverse animation based on the current animation
             let reverseAnimation = '';
-            if (currentAnimation.includes('slide-top')) {
-                reverseAnimation = 'slide-top-reverse';
-            } else if (currentAnimation.includes('slide-bottom')) {
-                reverseAnimation = 'slide-bottom-reverse';
-            } else if (currentAnimation.includes('slide-left')) {
-                reverseAnimation = 'slide-left-reverse';
-            } else if (currentAnimation.includes('slide-right')) {
-                reverseAnimation = 'slide-right-reverse';
-            } else if (currentAnimation.includes('zoom-in')) {
-                reverseAnimation = 'zoom-out';
+            if (currentAnimation.includes('ts-toast-slide-top')) {
+                reverseAnimation = 'ts-toast-slide-top-reverse';
+            } else if (currentAnimation.includes('ts-toast-slide-bottom')) {
+                reverseAnimation = 'ts-toast-slide-bottom-reverse';
+            } else if (currentAnimation.includes('ts-toast-slide-left')) {
+                reverseAnimation = 'ts-toast-slide-left-reverse';
+            } else if (currentAnimation.includes('ts-toast-slide-right')) {
+                reverseAnimation = 'ts-toast-slide-right-reverse';
+            } else if (currentAnimation.includes('ts-toast-zoom-in')) {
+                reverseAnimation = 'ts-toast-zoom-out';
             }
 
             // Apply the reverse animation dynamically
-            el.classList.add('slide-out');
+            el.classList.add('ts-toast-slide-out');
             el.style.animation = `${reverseAnimation} 0.5s ease`;
 
             // Wait for the reverse animation to finish before removing the toast
             setTimeout(() => {
-                el.classList.remove('show', 'slide-out');
+                el.classList.remove('ts-toast-show', 'ts-toast-slide-out');
                 el.style.animation = '';
                 if (el.parentNode) el.parentNode.removeChild(el);
                 if (typeof callback === 'function') callback();
@@ -282,7 +293,7 @@
 
         // Show Toast with animation
         setTimeout(() => {
-            toastElement.classList.add('show');
+            toastElement.classList.add('ts-toast-show');
         }, 100);
 
         // Handle Loader and Icon
@@ -445,10 +456,10 @@
                 else if (currentAnimation.includes('slide-left')) reverseAnimation = 'slide-left-reverse';
                 else if (currentAnimation.includes('slide-right')) reverseAnimation = 'slide-right-reverse';
                 else if (currentAnimation.includes('zoom-in')) reverseAnimation = 'zoom-out';
-                el.classList.add('slide-out');
+                el.classList.add('ts-toast-slide-out');
                 el.style.animation = `${reverseAnimation} 0.5s ease`;
                 setTimeout(() => {
-                    el.classList.remove('show', 'slide-out');
+                    el.classList.remove('ts-toast-show', 'ts-toast-slide-out');
                     el.style.animation = '';
                     if (el.parentNode) el.parentNode.removeChild(el);
                     if (typeof cb === 'function') cb();
@@ -474,7 +485,7 @@
 
         // Force reflow and add animation after DOM insert
         requestAnimationFrame(() => {
-            toastElement.classList.add('show');
+            toastElement.classList.add('ts-toast-show');
         });
 
         const loader = toastElement.querySelector('.ts-toast-loader');
@@ -517,10 +528,10 @@
                 else if (currentAnimation.includes('slide-left')) reverseAnimation = 'slide-left-reverse';
                 else if (currentAnimation.includes('slide-right')) reverseAnimation = 'slide-right-reverse';
                 else if (currentAnimation.includes('zoom-in')) reverseAnimation = 'zoom-out';
-                toastElement.classList.add('slide-out');
+                toastElement.classList.add('ts-toast-slide-out');
                 toastElement.style.animation = `${reverseAnimation} 0.5s ease`;
                 setTimeout(() => {
-                    toastElement.classList.remove('show', 'slide-out');
+                    toastElement.classList.remove('ts-toast-show', 'ts-toast-slide-out');
                     toastElement.style.animation = '';
                     if (toastElement.parentNode) toastElement.parentNode.removeChild(toastElement);
                 }, 500);
