@@ -111,7 +111,7 @@ t.update('Done!', { type: 'success', duration: 2000 });
 | `cancelButtonColor` | `string` | `null` | Inline text color for cancel button. |
 
 ### 🧪 Playground
-Open `index.html` to experiment with all options (message, type, position, animation, duration, icon, loader, confirm title/texts, overlay, close, and button colors).
+Open `[Demo](https://tsirosgeorge.github.io/toast-notification/)` to experiment with all options (message, type, position, animation, duration, icon, loader, confirm title/texts, overlay, close, and button colors).
 
 
 ## 📝 License
