@@ -87,6 +87,8 @@
     border-radius: 12px;
     padding: 16px 20px;
     box-shadow: var(--toast-shadow, 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1));
+    /* Add transitions for overlay confirms */
+    transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
 .ts-toast.ts-toast-confirm .ts-toast-content {
@@ -105,6 +107,24 @@
     gap: 10px;
     justify-content: center;
     margin-top: 12px;
+}
+
+.ts-toast-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--toast-border, #e5e7eb);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    margin-top: 12px;
+    background: var(--toast-bg, #fff);
+    color: var(--toast-color, #000);
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.ts-toast-input:focus {
+    border-color: #3b82f6;
 }
 
 /* Show toast with animation */
@@ -291,11 +311,9 @@
     }
 }
 
-/* Slide-out when removed */
-.ts-toast-container .ts-toast.ts-toast-slide-out {
-    animation-duration: 0.5s;
-    animation-timing-function: ease-in-out;
-    animation-fill-mode: forwards;
+/* Slide-out when removed: use the same opacity/transform transition */
+.ts-toast.ts-toast-slide-out {
+    opacity: 0;
 }
 
 /* Overlay for confirm dialogs */
@@ -308,6 +326,14 @@
     justify-content: center;
     z-index: 2147483646;
 }
+
+/* Position-based overlay alignment */
+.ts-toast-overlay.top-left { align-items: flex-start; justify-content: flex-start; padding: 1rem; }
+.ts-toast-overlay.top-center { align-items: flex-start; justify-content: center; padding: 1rem; }
+.ts-toast-overlay.top-right { align-items: flex-start; justify-content: flex-end; padding: 1rem; }
+.ts-toast-overlay.bottom-left { align-items: flex-end; justify-content: flex-start; padding: 1rem; }
+.ts-toast-overlay.bottom-center { align-items: flex-end; justify-content: center; padding: 1rem; }
+.ts-toast-overlay.bottom-right { align-items: flex-end; justify-content: flex-end; padding: 1rem; }
 
 /* Tiny utility: flex icon container */
 /* Scoped utility to avoid conflicts */

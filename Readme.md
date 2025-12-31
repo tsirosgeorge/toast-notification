@@ -6,7 +6,7 @@ A lightweight, customizable, and dependency-free toast notification system writt
 
 ## 📦 Include package via cdn
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/toast.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/toast.min.js"></script>
 ```
 
 ## 📦 Include package via npm
@@ -60,6 +60,23 @@ const ok = await toast.confirm('This will delete the file.', {
 });
 if (ok) {
   // proceed
+}
+```
+
+- With Input Field
+```javascript
+const name = await toast.confirm('Enter your name:', {
+  title: 'Welcome',
+  input: 'text',  // 'text', 'email', 'password', 'number', 'textarea'
+  inputPlaceholder: 'Your name here...',
+  inputValue: '',  // optional default value
+  confirmText: 'Submit',
+  cancelText: 'Cancel',
+});
+if (name) {
+  console.log('Hello', name);
+} else {
+  console.log('Cancelled');
 }
 ```
 

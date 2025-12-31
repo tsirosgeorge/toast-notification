@@ -1,13 +1,12 @@
-(function () {
-    "use strict";
+"use strict";
 
-    // Dynamically load the external CSS file
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/css/toast.min.css";// Pinned to current release
-    document.head.appendChild(link);
+// Dynamically load the external CSS file
+const link = document.createElement("link");
+link.rel = "stylesheet";
+link.href = "./assets/css/toast.css"; // Local for testing
+document.head.appendChild(link);
 
-    // Inject minimal styles for confirm actions and overlay (kept tiny to avoid breaking existing CSS)
+        // Inject minimal styles for confirm actions and overlay (kept tiny to avoid breaking existing CSS)
     (function injectInlineStyles() {
         const STYLE_ID = 'ts-toast-inline-extras';
         if (document.getElementById(STYLE_ID)) return;
@@ -39,7 +38,7 @@
         document.head.appendChild(style);
     })();
 
-    const toast = function (message, options = {}) {
+const toast = function (message, options = {}) {
         const {
             position = 'top-right',
             animation = 'slide-right', // Default fallback animation
@@ -53,6 +52,10 @@
             title = null,
             confirmText = 'Yes',
             cancelText = 'No',
+            // input field options
+            input = false, // 'text', 'email', 'password', 'number', 'textarea', or false
+            inputPlaceholder = '',
+            inputValue = '',
             // confirm button color customization (optional)
             confirmButtonBg = null,
             confirmButtonColor = null,
@@ -92,33 +95,35 @@
                 : position.endsWith('left') ? 'ts-toast-slide-left'
                 : 'ts-toast-slide-right'));
 
-        // helper: remove with reverse animation and cleanup
+        // helper: remove with smooth CSS transition and cleanup (used by alerts)
         const removeWithAnimation = (el, callback) => {
-            // Get the current animation applied to the toast
-            const currentAnimation = el.style.animation || '';
-
-            // Determine the reverse animation based on the current animation
-            let reverseAnimation = '';
-            if (currentAnimation.includes('ts-toast-slide-top')) {
-                reverseAnimation = 'ts-toast-slide-top-reverse';
-            } else if (currentAnimation.includes('ts-toast-slide-bottom')) {
-                reverseAnimation = 'ts-toast-slide-bottom-reverse';
-            } else if (currentAnimation.includes('ts-toast-slide-left')) {
-                reverseAnimation = 'ts-toast-slide-left-reverse';
-            } else if (currentAnimation.includes('ts-toast-slide-right')) {
-                reverseAnimation = 'ts-toast-slide-right-reverse';
-            } else if (currentAnimation.includes('ts-toast-zoom-in')) {
-                reverseAnimation = 'ts-toast-zoom-out';
+            const anim = el.dataset && el.dataset.anim ? el.dataset.anim : (el.style.animation || '');
+            let transform = '';
+            if (anim.includes('ts-toast-slide-top')) {
+                // Entered from top, exit upwards
+                transform = 'translateY(-100%)';
+            } else if (anim.includes('ts-toast-slide-bottom')) {
+                // Entered from bottom, exit upwards
+                transform = 'translateY(100%)';
+            } else if (anim.includes('ts-toast-slide-left')) {
+                // Entered from left, exit to right
+                transform = 'translateX(100%)';
+            } else if (anim.includes('ts-toast-slide-right')) {
+                // Entered from right, exit to right
+                transform = 'translateX(100%)';
             }
 
-            // Apply the reverse animation dynamically
             el.classList.add('ts-toast-slide-out');
-            el.style.animation = `${reverseAnimation} 0.5s ease`;
+            el.classList.remove('ts-toast-show');
+            // Stop any running keyframe animation and drive exit via CSS transition
+            el.style.animation = '';
+            if (transform) {
+                el.style.transform = transform;
+            }
+            el.style.opacity = '0';
 
-            // Wait for the reverse animation to finish before removing the toast
             setTimeout(() => {
-                el.classList.remove('ts-toast-show', 'ts-toast-slide-out');
-                el.style.animation = '';
+                el.classList.remove('ts-toast-slide-out');
                 if (el.parentNode) el.parentNode.removeChild(el);
                 if (typeof callback === 'function') callback();
             }, 500);
@@ -126,6 +131,7 @@
 
     const toastElement = document.createElement('div');
         toastElement.className = `ts-toast ts-toast-${type}${isConfirm ? ' ts-toast-confirm' : ''}`;
+    toastElement.dataset.anim = resolvedAnimation;
     toastElement.style.animation = `${resolvedAnimation} 0.5s ease`;
         // In confirm mode, we stack content vertically; in alert mode keep original layout
         if (!isConfirm) {
@@ -146,7 +152,7 @@
             img.style.height = '30px';
             img.style.objectFit = 'contain';
 
-            const baseUrl = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/img/';
+            const baseUrl = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/img/';
             const timestamp = new Date().getTime(); // 🔄 force refresh
 
             if (type === 'success') {
@@ -185,6 +191,22 @@
             toastElement.appendChild(toastBody);
         }
 
+        // Input field (for confirm mode with input)
+        let inputElement = null;
+        if (isConfirm && input) {
+            if (input === 'textarea') {
+                inputElement = document.createElement('textarea');
+                inputElement.rows = 3;
+            } else {
+                inputElement = document.createElement('input');
+                inputElement.type = input === 'text' || input === 'email' || input === 'password' || input === 'number' ? input : 'text';
+            }
+            inputElement.className = 'ts-toast-input';
+            inputElement.placeholder = inputPlaceholder;
+            inputElement.value = inputValue;
+            toastElement.appendChild(inputElement);
+        }
+
         // Actions (for confirm mode)
         let actionsContainer = null;
         let resultResolver = null;
@@ -214,10 +236,12 @@
             toastElement.result = new Promise((resolve) => { resultResolver = resolve; });
 
             const resolveAndClose = (value) => {
-                if (resultResolver) resultResolver(value);
-                if (value && typeof onConfirm === 'function') onConfirm(toastElement);
+                const result = (value && inputElement !== null) ? inputElement.value : value;
+                if (resultResolver) resultResolver(result);
+                if (value && typeof onConfirm === 'function') onConfirm((inputElement !== null) ? inputElement.value : value, toastElement);
                 if (!value && typeof onCancel === 'function') onCancel(toastElement);
-                if (typeof onResult === 'function') onResult(value, toastElement);
+                if (typeof onResult === 'function') onResult(result, toastElement);
+                // Use the same slide+fade removal as alerts
                 removeWithAnimation(toastElement, () => {
                     if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
                     // Remove overlay if present
@@ -241,7 +265,7 @@
         let overlay = null;
         if (isConfirm && useOverlay) {
             overlay = document.createElement('div');
-            overlay.className = 'ts-toast-overlay';
+            overlay.className = `ts-toast-overlay ${position}`;
             document.body.appendChild(overlay);
             overlay.appendChild(toastElement);
             if (showClose) {
@@ -446,21 +470,12 @@
 
         // Set the auto-remove timer again to ensure toast disappears after the duration
         const autoRemove = setTimeout(() => {
-            // Use the same helper removal used above
-            // Re-create the helper here in case update() is used alone
             const removeWithAnimation = (el, cb) => {
-                const currentAnimation = el.style.animation || '';
-                let reverseAnimation = '';
-                if (currentAnimation.includes('slide-top')) reverseAnimation = 'slide-top-reverse';
-                else if (currentAnimation.includes('slide-bottom')) reverseAnimation = 'slide-bottom-reverse';
-                else if (currentAnimation.includes('slide-left')) reverseAnimation = 'slide-left-reverse';
-                else if (currentAnimation.includes('slide-right')) reverseAnimation = 'slide-right-reverse';
-                else if (currentAnimation.includes('zoom-in')) reverseAnimation = 'zoom-out';
                 el.classList.add('ts-toast-slide-out');
-                el.style.animation = `${reverseAnimation} 0.5s ease`;
+                el.classList.remove('ts-toast-show');
+                el.style.animation = '';
                 setTimeout(() => {
-                    el.classList.remove('ts-toast-show', 'ts-toast-slide-out');
-                    el.style.animation = '';
+                    el.classList.remove('ts-toast-slide-out');
                     if (el.parentNode) el.parentNode.removeChild(el);
                     if (typeof cb === 'function') cb();
                 }, 500);
@@ -521,18 +536,11 @@
             },
             close: () => {
                 if (toastElement._autoRemove) clearTimeout(toastElement._autoRemove);
-                const currentAnimation = toastElement.style.animation || '';
-                let reverseAnimation = '';
-                if (currentAnimation.includes('slide-top')) reverseAnimation = 'slide-top-reverse';
-                else if (currentAnimation.includes('slide-bottom')) reverseAnimation = 'slide-bottom-reverse';
-                else if (currentAnimation.includes('slide-left')) reverseAnimation = 'slide-left-reverse';
-                else if (currentAnimation.includes('slide-right')) reverseAnimation = 'slide-right-reverse';
-                else if (currentAnimation.includes('zoom-in')) reverseAnimation = 'zoom-out';
                 toastElement.classList.add('ts-toast-slide-out');
-                toastElement.style.animation = `${reverseAnimation} 0.5s ease`;
+                toastElement.classList.remove('ts-toast-show');
+                toastElement.style.animation = '';
                 setTimeout(() => {
-                    toastElement.classList.remove('ts-toast-show', 'ts-toast-slide-out');
-                    toastElement.style.animation = '';
+                    toastElement.classList.remove('ts-toast-slide-out');
                     if (toastElement.parentNode) toastElement.parentNode.removeChild(toastElement);
                 }, 500);
             }
@@ -548,7 +556,7 @@
                 mode: 'confirm',
                 duration: 0, // prevent auto-dismiss
                 dismissOnClick: false,
-                onResult: (val) => resolve(!!val)
+                onResult: (val) => resolve(val)
             });
             // If consumer needs the element, it is returned by toast() but we ignore here.
             // They can still call toast(...) with mode: 'confirm' to get the element and read el.result
@@ -556,6 +564,12 @@
         });
     };
 
-    // Expose globally
+// Expose globally for CDN / browser usage
+if (typeof window !== 'undefined') {
     window.toast = toast;
-})();
+}
+
+// CommonJS export for Node/bundlers (safe no-op in browsers)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = toast;
+}

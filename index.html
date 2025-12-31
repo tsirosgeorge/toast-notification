@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="toast.js"></script>
+    <script type="module">
+        import {toast} from './toast.module.js';
+        window.toast = toast;
+    </script>
     <title>Toast Notification Test</title>
     <style>
         :root { color-scheme: light dark; }
@@ -132,6 +135,25 @@
             <label>Cancel Button Text Color (optional)</label>
             <input id="cancelColor" type="text" placeholder="#1f2937" />
         </div>
+        <div class="field">
+            <label>Input Type (confirm)</label>
+            <select id="inputType">
+                <option value="false">No Input</option>
+                <option value="text">Text</option>
+                <option value="email">Email</option>
+                <option value="password">Password</option>
+                <option value="number">Number</option>
+                <option value="textarea">Textarea</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Input Placeholder (confirm)</label>
+            <input id="inputPlaceholder" type="text" placeholder="Enter value..." />
+        </div>
+        <div class="field">
+            <label>Input Default Value (confirm)</label>
+            <input id="inputValue" type="text" placeholder="" />
+        </div>
     </div>
 
     <div class="row" style="margin-top:16px;">
@@ -144,6 +166,9 @@
     <div class="log" id="log">Log:</div>
 
     <script>
+
+    
+
         const $ = (id) => document.getElementById(id);
         const log = (msg) => {
             const el = $("log");
@@ -174,14 +199,18 @@
             });
         });
 
-        $("btn-confirm-promise").addEventListener('click', async () => {
+        $('btn-confirm-promise').addEventListener('click', async () => {
             const options = getCommonOptions();
+            const inputType = $("inputType").value;
             const result = await toast.confirm($("msg").value, {
                 ...options,
                 type: $("type").value || 'warning',
                 confirmText: $("confirmText").value,
                 cancelText: $("cancelText").value,
                 title: $("title").value,
+                input: inputType === 'false' ? false : inputType,
+                inputPlaceholder: $("inputPlaceholder").value,
+                inputValue: $("inputValue").value,
                 useOverlay: $("overlay").value === 'true',
                 closeOnOverlayClick: $("overlayClose").value === 'true',
                 showClose: $("showClose").value === 'true',
@@ -190,17 +219,21 @@
                 cancelButtonBg: $("cancelBg").value.trim() || null,
                 cancelButtonColor: $("cancelColor").value.trim() || null,
             });
-            log(`Confirm (promise) result: ${result}`);
+            log(`Confirm (promise) result: ${JSON.stringify(result)}`);
         });
 
         $("btn-confirm-callbacks").addEventListener('click', () => {
             const options = getCommonOptions();
+            const inputType = $("inputType").value;
             toast($("msg").value, {
                 ...options,
                 mode: 'confirm',
                 confirmText: $("confirmText").value,
                 cancelText: $("cancelText").value,
                 title: $("title").value,
+                input: inputType === 'false' ? false : inputType,
+                inputPlaceholder: $("inputPlaceholder").value,
+                inputValue: $("inputValue").value,
                 useOverlay: $("overlay").value === 'true',
                 closeOnOverlayClick: $("overlayClose").value === 'true',
                 showClose: $("showClose").value === 'true',
@@ -208,7 +241,7 @@
                 confirmButtonColor: $("confirmColor").value.trim() || null,
                 cancelButtonBg: $("cancelBg").value.trim() || null,
                 cancelButtonColor: $("cancelColor").value.trim() || null,
-                onConfirm: () => log('Confirm (callbacks): YES'),
+                onConfirm: (value) => log(`Confirm (callbacks): YES - Value: ${value}`),
                 onCancel: () => log('Confirm (callbacks): NO'),
                 onDismiss: () => log('Confirm dismissed')
             });

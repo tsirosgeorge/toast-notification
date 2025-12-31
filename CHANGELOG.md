@@ -1,5 +1,18 @@
 # Changelog
 
+## [5.3.0] - 2025-12-31
+
+### Added
+- Input field support for confirm modals (text, email, password, number, textarea)
+- Position support for confirm overlays (top-left, top-right, bottom-center, etc.)
+- Input placeholder and default value options
+- Promise-based confirms now return input value when confirmed
+
+### Fixed
+- Confirm modal fade-out animation now works smoothly (500ms transition)
+- Input values properly returned from both promise and callback APIs
+- Overlay positioning respects position option for centered/corner placement
+
 ## [5.1.0] - 2025-09-10
 
 ### Added
