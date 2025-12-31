@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.3.1] - 2025-12-31
+
+### Fixed
+- CSS now loads from CDN instead of relative path to prevent 404 errors on external sites
+- Updated all remaining asset URLs to 5.3.0
+
 ## [5.3.0] - 2025-12-31
 
 ### Added

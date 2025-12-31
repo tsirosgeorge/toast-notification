@@ -6,7 +6,7 @@ A lightweight, customizable, and dependency-free toast notification system writt
 
 ## 📦 Include package via cdn
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/toast.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.1/toast.min.js"></script>
 ```
 
 ## 📦 Include package via npm

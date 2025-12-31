@@ -3,7 +3,7 @@
 // Dynamically load the external CSS file (same as toast.js)
 const link = document.createElement("link");
 link.rel = "stylesheet";
-link.href = "./assets/css/toast.css"; // Local for testing
+link.href = "https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/css/toast.min.css";
 document.head.appendChild(link);
 
 // Inject minimal styles for confirm actions and overlay (same as toast.js)

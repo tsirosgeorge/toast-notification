@@ -3,7 +3,7 @@
 // Dynamically load the external CSS file
 const link = document.createElement("link");
 link.rel = "stylesheet";
-link.href = "./assets/css/toast.css"; // Local for testing
+link.href = "https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/css/toast.min.css";
 document.head.appendChild(link);
 
         // Inject minimal styles for confirm actions and overlay (kept tiny to avoid breaking existing CSS)
@@ -438,13 +438,13 @@ const toast = function (message, options = {}) {
             img.style.objectFit = 'contain';
 
             if (type === 'success') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/img/success.gif';
+                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/img/success.gif';
             } else if (type === 'error') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/img/error.gif';
+                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/img/error.gif';
             } else if (type === 'info') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/img/info.gif';
+                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/img/info.gif';
             } else if (type === 'warning') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/img/warning.gif';
+                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/img/warning.gif';
             }
 
             iconElement.appendChild(img);
