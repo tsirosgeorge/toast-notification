@@ -1,5 +1,10 @@
 # Changelog
 
+## [5.3.3] - 2025-12-31
+
+### Fixed
+- Updated README license note to reference LICENSE file correctly
+
 ## [5.3.2] - 2025-12-31
 
 ### Added

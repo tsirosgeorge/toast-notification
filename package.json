@@ -1,6 +1,6 @@
 {
   "name": "@tsirosgeorge/toastnotification",
-  "version": "5.3.2",
+  "version": "5.3.3",
   "description": "a toast notification plugin",
   "main": "toast.min.js",
   "module": "toast.module.js",
@@ -16,7 +16,8 @@
       "build:js": "terser toast.js --compress --mangle --output toast.min.js",
       "build": "npm run build:css && npm run build:js",
       "prepublishOnly": "npm run build",
-      "release": "npm version && git push origin main --follow-tags && npm publish --access public"
+      "release": "npm version && git push origin main --follow-tags && npm publish --access public",
+      "publish": "npm run build && git add -A && git commit -m \"Release v5.3.2: Add LICENSE file and license documentation\" && git tag v5.3.2 && git push origin main --tags && npm publish --access public"
   },
   "files": [
     "toast.js",

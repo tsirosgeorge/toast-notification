@@ -8,7 +8,7 @@ A lightweight, customizable, and dependency-free toast notification system writt
 
 ## 📦 Include package via cdn
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.2/toast.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.3/toast.min.js"></script>
 ```
 
 ## 📦 Include package via npm
@@ -155,4 +155,4 @@ This software is provided "as is", without warranty of any kind. Use at your own
 
 ---
 
-**Note:** This package is marked as `UNLICENSED` in `package.json` to reflect these restrictions.
+**Note:** See the [LICENSE](LICENSE) file included in this package for full terms and conditions.
