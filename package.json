@@ -1,6 +1,6 @@
 {
   "name": "@tsirosgeorge/toastnotification",
-  "version": "5.3.1",
+  "version": "5.3.2",
   "description": "a toast notification plugin",
   "main": "toast.min.js",
   "module": "toast.module.js",
@@ -24,7 +24,9 @@
     "toast.module.js",
     "assets/css/toast.css",
     "assets/css/toast.min.css",
-    "assets/img/"
+    "assets/img/",
+    "LICENSE",
+    "README.md"
   ],
   "repository": {
     "type": "git",
@@ -36,7 +38,7 @@
     "alert"
   ],
   "author": "George Tsiros",
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE",
   "private": false,
   "publishConfig": {
     "access": "public"

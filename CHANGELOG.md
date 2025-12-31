@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.3.2] - 2025-12-31
+
+### Added
+- LICENSE file with proprietary license terms
+- License notice in README
+- LICENSE and README.md now included in npm package
+
 ## [5.3.1] - 2025-12-31
 
 ### Fixed

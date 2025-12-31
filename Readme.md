@@ -2,11 +2,13 @@
 
 A lightweight, customizable, and dependency-free toast notification system written in vanilla JavaScript.
 
+> **License:** Proprietary - See [LICENSE](LICENSE) file. This is NOT open source software.
+
 ---
 
 ## 📦 Include package via cdn
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.1/toast.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.2/toast.min.js"></script>
 ```
 
 ## 📦 Include package via npm
@@ -115,10 +117,13 @@ t.update('Done!', { type: 'success', duration: 2000 });
 ### 🧩 Confirm-specific options
 | Option | Type | Default | Description |
 |-------|------|---------|-------------|
-| `mode` | `"confirm" | "swal"` | — | Set to show a confirm dialog with Yes/No buttons. |
+| `mode` | `"confirm" \| "swal"` | — | Set to show a confirm dialog with Yes/No buttons. |
 | `title` | `string` | `null` | Optional heading shown above the message. |
 | `confirmText` | `string` | `"Yes"` | Confirm button label. |
 | `cancelText` | `string` | `"No"` | Cancel button label. |
+| `input` | `string \| false` | `false` | Input field type: `'text'`, `'email'`, `'password'`, `'number'`, `'textarea'`, or `false` for no input. |
+| `inputPlaceholder` | `string` | `""` | Placeholder text for the input field. |
+| `inputValue` | `string` | `""` | Default value for the input field. |
 | `useOverlay` | `boolean` | `true` | Dim the background and center the dialog. |
 | `closeOnOverlayClick` | `boolean` | `true` | Clicking the overlay cancels. |
 | `showClose` | `boolean` | `false` | Show a top-right × button. |
@@ -130,6 +135,7 @@ t.update('Done!', { type: 'success', duration: 2000 });
 ### 🧪 Live Demo
 Open the online demo to try all options: https://tsirosgeorge.github.io/toast-notification/
 
+---
 
 ## 📝 License
 
