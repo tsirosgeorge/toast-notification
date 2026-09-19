@@ -2,11 +2,34 @@
 
 ## [Unreleased]
 
+### Fixed
+- A confirm dialog now takes focus when it opens. It did not before, so the button that
+  opened it kept focus behind the backdrop and Enter or Space re-triggered it, stacking a
+  second dialog on top of the first. Tab is now trapped inside the dialog, Escape cancels,
+  and focus returns to the trigger when the dialog closes.
+- Selecting text in a dialog's input and releasing the mouse outside the card no longer
+  cancels the dialog. The resulting click reported the backdrop as its target, so the
+  dialog was thrown away mid-edit. A cancel now requires press *and* release on the
+  backdrop.
+- Enter in a single-line confirm input submits, the way a native `prompt()` does. It
+  previously did nothing. A `textarea` keeps Enter for newlines.
+- The page no longer scrolls behind an open dialog.
+- `onClick` fires on the click instead of 500ms later, when the exit animation ended.
+- `toast.loading().close()` fires `onDismiss`; its hand-rolled copy of the removal never did.
+- A vertical swipe past a toast no longer dismisses it — dismissal now needs a
+  mostly-horizontal gesture — and the touch listeners are passive.
+
 ### Added
 - `position: 'center'` places a toast in the dead centre of the viewport, and centres a
-  confirm dialog on its backdrop. Previously only the six edge positions existed, so an
-  alert could sit at an edge or at a corner but never in the middle. It defaults to the
-  `zoom-in` animation, since there is no edge for it to slide in from.
+  confirm dialog on its backdrop. Previously only the six edge positions existed. It
+  defaults to the `zoom-in` animation, since there is no edge for it to slide in from.
+- `allowHtml: false` renders `message` as text. It stays `true` by default for
+  compatibility, but any message built from user input should set it.
+- `closeOnEscape` (default `true`) for confirm dialogs.
+- `toast.dismissAll()`, and a `close()` method on the element every toast call returns.
+- Accessibility: `role="dialog"`, `aria-modal` and `aria-labelledby` on confirm dialogs;
+  `aria-live="polite"` on toast containers; `role="alert"` on error and warning toasts;
+  `prefers-reduced-motion` is honoured.
 
 ### Changed
 - CI uses `actions/checkout@v5` and `actions/setup-node@v5`; the v4 actions were being

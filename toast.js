@@ -10,6 +10,23 @@ const TS_TOAST_CDN = (typeof window !== 'undefined' && window.TS_TOAST_ASSET_BAS
     ? String(window.TS_TOAST_ASSET_BASE).replace(/\/+$/, '')
     : `https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@${TS_TOAST_VERSION}`;
 
+// How many confirm dialogs are currently open. The body scroll lock belongs to the
+// group, so only the last dialog to close may release it.
+let tsToastOpenModals = 0;
+let tsToastPrevOverflow = '';
+
+const tsToastReducedMotion = () =>
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Everything inside the dialog a keyboard can reach, in DOM order.
+const tsToastFocusable = (root) => Array.from(
+    root.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+).filter((el) => !el.disabled && el.offsetParent !== null);
+
+let tsToastIdCounter = 0;
+
 // Load the stylesheet from the CDN, unless the page opted out by importing it itself
 // (set window.TS_TOAST_NO_CSS = true before loading, or ship assets/css/toast.css yourself).
 (function loadStylesheet() {
@@ -86,6 +103,11 @@ const toast = function (message, options = {}) {
             useOverlay = true,
             closeOnOverlayClick = true,
             showClose = false,
+            // Escape cancels a confirm dialog
+            closeOnEscape = true,
+            // `message` is written as HTML for backwards compatibility. Pass false to
+            // render it as plain text, which is what you want for anything user-supplied.
+            allowHtml = true,
             // interactions
             dismissOnClick = true, // ignored if confirm-mode
             onClick = null,      // Custom onClick event listener
@@ -94,6 +116,7 @@ const toast = function (message, options = {}) {
         } = options;
 
         const isConfirm = (mode === 'confirm' || mode === 'swal');
+        const reducedMotion = tsToastReducedMotion();
 
         // Pick an animation intelligently when one wasn't explicitly provided
         const resolvedAnimation = (typeof options.animation === 'string' && options.animation.trim())
@@ -147,13 +170,24 @@ const toast = function (message, options = {}) {
                 el.classList.remove('ts-toast-slide-out');
                 if (el.parentNode) el.parentNode.removeChild(el);
                 if (typeof callback === 'function') callback();
-            }, 500);
+            }, reducedMotion ? 0 : 500);
         };
 
     const toastElement = document.createElement('div');
         toastElement.className = `ts-toast ts-toast-${type}${isConfirm ? ' ts-toast-confirm' : ''}`;
     toastElement.dataset.anim = resolvedAnimation;
-    toastElement.style.animation = `${resolvedAnimation} 0.5s ease`;
+    if (!reducedMotion) toastElement.style.animation = `${resolvedAnimation} 0.5s ease`;
+
+        const uid = `ts-toast-${++tsToastIdCounter}`;
+        if (isConfirm) {
+            // Without these a screen reader announces nothing, and without tabindex the
+            // dialog cannot take focus away from whatever opened it.
+            toastElement.setAttribute('role', 'dialog');
+            toastElement.setAttribute('aria-modal', 'true');
+            toastElement.tabIndex = -1;
+        } else if (type === 'error' || type === 'warning') {
+            toastElement.setAttribute('role', 'alert');
+        }
         // In confirm mode, we stack content vertically; in alert mode keep original layout
         if (!isConfirm) {
             toastElement.style.flexDirection = 'row-reverse';
@@ -185,7 +219,11 @@ const toast = function (message, options = {}) {
         // Create Body
         const toastBody = document.createElement('div');
         toastBody.className = 'ts-toast-body';
-        toastBody.innerHTML = message; // Allow HTML content in message
+        toastBody.id = `${uid}-body`;
+        // HTML by default for backwards compatibility; pass allowHtml: false for
+        // anything that came from a user.
+        if (allowHtml) toastBody.innerHTML = message;
+        else toastBody.textContent = message;
 
         // Content row for confirm (icon + text side-by-side)
         let contentRow = null;
@@ -196,10 +234,13 @@ const toast = function (message, options = {}) {
             if (title) {
                 const titleEl = document.createElement('div');
                 titleEl.className = 'ts-toast-title';
+                titleEl.id = `${uid}-title`;
                 titleEl.textContent = title;
                 contentRow.appendChild(titleEl);
+                toastElement.setAttribute('aria-labelledby', titleEl.id);
             }
             contentRow.appendChild(toastBody);
+            toastElement.setAttribute('aria-describedby', toastBody.id);
             toastElement.appendChild(contentRow);
         } else {
             toastElement.appendChild(toastBody);
@@ -218,6 +259,13 @@ const toast = function (message, options = {}) {
             inputElement.className = 'ts-toast-input';
             inputElement.placeholder = inputPlaceholder;
             inputElement.value = inputValue;
+            // Enter submits a single-line field, the way a native prompt does.
+            // A textarea keeps Enter for newlines.
+            if (input !== 'textarea') {
+                inputElement.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); resolveAndClose(true); }
+                });
+            }
             toastElement.appendChild(inputElement);
         }
 
@@ -227,6 +275,8 @@ const toast = function (message, options = {}) {
         // Assigned in confirm mode; the overlay and (x) handlers below call it so that
         // *every* way of dismissing the dialog settles the promise and the callbacks.
         let resolveAndClose = null;
+        // Releases the scroll lock, the key handler and the focus this dialog took.
+        let releaseModal = () => {};
         if (isConfirm) {
             actionsContainer = document.createElement('div');
             actionsContainer.className = 'ts-toast-actions';
@@ -266,6 +316,7 @@ const toast = function (message, options = {}) {
                 if (confirmed && typeof onConfirm === 'function') onConfirm(result, toastElement);
                 if (!confirmed && typeof onCancel === 'function') onCancel(toastElement);
                 if (typeof onResult === 'function') onResult(result, toastElement);
+                releaseModal();
                 // Use the same slide+fade removal as alerts
                 removeWithAnimation(toastElement, () => {
                     if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
@@ -308,11 +359,17 @@ const toast = function (message, options = {}) {
                 toastElement.appendChild(closeBtn);
             }
             if (closeOnOverlayClick) {
+                // The cancel must both start and end on the backdrop. Selecting text in
+                // the input and releasing the mouse outside the card produced a click
+                // whose target was the overlay, which threw the dialog away mid-edit.
+                let pressedOnBackdrop = false;
+                overlay.addEventListener('pointerdown', (e) => { pressedOnBackdrop = e.target === overlay; });
                 overlay.addEventListener('click', (e) => {
                     // Backdrop click is a cancel: settle the promise and onCancel/onResult,
                     // then close. Previously this resolved only the internal el.result,
                     // so `await toast.confirm(...)` hung forever.
-                    if (e.target === overlay) resolveAndClose(false);
+                    if (e.target === overlay && pressedOnBackdrop) resolveAndClose(false);
+                    pressedOnBackdrop = false;
                 });
             }
         } else {
@@ -323,7 +380,77 @@ const toast = function (message, options = {}) {
                 container.className = `ts-toast-container ${position}`;
                 document.body.appendChild(container);
             }
+            if (!container.hasAttribute('aria-live')) {
+                // Without this a toast is invisible to a screen reader.
+                container.setAttribute('role', 'status');
+                container.setAttribute('aria-live', 'polite');
+                container.setAttribute('aria-relevant', 'additions');
+            }
             container.appendChild(toastElement);
+        }
+
+        if (isConfirm) {
+            // The dialog has to own the keyboard while it is open. Without this the
+            // element that opened it keeps focus, so pressing Enter or Space activates
+            // it again and stacks a second dialog on top of the first — and Tab walks
+            // through the page behind the backdrop.
+            const previouslyFocused = document.activeElement;
+
+            tsToastOpenModals += 1;
+            if (tsToastOpenModals === 1) {
+                tsToastPrevOverflow = document.body.style.overflow;
+                document.body.style.overflow = 'hidden';
+            }
+
+            // With dialogs stacked, only the top one should answer the keyboard.
+            const isTopmost = () => {
+                const open = document.querySelectorAll('.ts-toast.ts-toast-confirm');
+                return open.length === 0 || open[open.length - 1] === toastElement;
+            };
+
+            const onKeydown = (e) => {
+                if (!isTopmost()) return;
+
+                if (e.key === 'Escape' && closeOnEscape) {
+                    e.preventDefault();
+                    resolveAndClose(false);
+                    return;
+                }
+                if (e.key !== 'Tab') return;
+
+                const focusables = tsToastFocusable(toastElement);
+                if (!focusables.length) { e.preventDefault(); return; }
+
+                const first = focusables[0];
+                const last = focusables[focusables.length - 1];
+
+                // Focus can start outside the dialog (the trigger button); pull it back.
+                if (!toastElement.contains(document.activeElement)) {
+                    e.preventDefault();
+                    (e.shiftKey ? last : first).focus();
+                } else if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            };
+            document.addEventListener('keydown', onKeydown, true);
+
+            releaseModal = () => {
+                document.removeEventListener('keydown', onKeydown, true);
+                tsToastOpenModals = Math.max(0, tsToastOpenModals - 1);
+                if (tsToastOpenModals === 0) document.body.style.overflow = tsToastPrevOverflow;
+                // Hand the keyboard back to whatever opened the dialog.
+                if (previouslyFocused && typeof previouslyFocused.focus === 'function' &&
+                    document.contains(previouslyFocused)) {
+                    previouslyFocused.focus();
+                }
+            };
+
+            // Land on the input when there is one, otherwise the confirm button.
+            (inputElement || toastElement.querySelector('.ts-toast-btn.confirm') || toastElement).focus();
         }
 
         // Trigger the onShow event if provided
@@ -370,8 +497,10 @@ const toast = function (message, options = {}) {
         if (!isConfirm && dismissOnClick) {
             toastElement.addEventListener('click', () => {
                 if (toastElement._autoRemove) clearTimeout(toastElement._autoRemove); // Clear the auto-remove timeout
+                // onClick belongs to the click, not to the end of the exit animation,
+                // which is where it used to fire half a second late.
+                if (onClick && typeof onClick === 'function') onClick(toastElement);
                 removeWithAnimation(toastElement, () => {
-                    if (onClick && typeof onClick === 'function') onClick(toastElement);
                     if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
                 });
             });
@@ -380,15 +509,23 @@ const toast = function (message, options = {}) {
         // Add swipe event listeners for mobile dismissal
         if (!isConfirm) {
             let touchStartX = 0;
+            let touchStartY = 0;
             let touchEndX = 0;
 
+            // Passive: these never preventDefault, and a non-passive touchstart blocks
+            // scrolling on the whole toast.
             toastElement.addEventListener('touchstart', (e) => {
                 touchStartX = e.changedTouches[0].screenX;
-            });
+                touchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
 
             toastElement.addEventListener('touchend', (e) => {
                 touchEndX = e.changedTouches[0].screenX;
-                if (Math.abs(touchStartX - touchEndX) > 50) { // Swipe distance threshold
+                const dx = Math.abs(touchStartX - touchEndX);
+                const dy = Math.abs(touchStartY - e.changedTouches[0].screenY);
+                // Only a mostly-horizontal swipe dismisses, so scrolling the page past a
+                // toast no longer throws it away on a bit of sideways drift.
+                if (dx > 50 && dx > dy) {
                     if (toastElement._autoRemove) clearTimeout(toastElement._autoRemove);
                     removeWithAnimation(toastElement, () => {
                         if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
@@ -396,6 +533,16 @@ const toast = function (message, options = {}) {
                 }
             });
         }
+
+        // Let callers dismiss a toast they are holding, instead of only waiting out
+        // the duration or making the user click it.
+        toastElement.close = () => {
+            if (toastElement._autoRemove) clearTimeout(toastElement._autoRemove);
+            if (isConfirm) { resolveAndClose(false); return; }
+            removeWithAnimation(toastElement, () => {
+                if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
+            });
+        };
 
         return toastElement;
     };
@@ -557,15 +704,11 @@ const toast = function (message, options = {}) {
                     showLoader: false // Disable loader when updating the message
                 });
             },
+            // Reuse the element's own close so onDismiss fires, which this
+            // hand-rolled copy of the removal never did.
             close: () => {
-                if (toastElement._autoRemove) clearTimeout(toastElement._autoRemove);
-                toastElement.classList.add('ts-toast-slide-out');
-                toastElement.classList.remove('ts-toast-show');
-                toastElement.style.animation = '';
-                setTimeout(() => {
-                    toastElement.classList.remove('ts-toast-slide-out');
-                    if (toastElement.parentNode) toastElement.parentNode.removeChild(toastElement);
-                }, 500);
+                toastElement._managedByLoading = false;
+                toastElement.close();
             }
         };
     };
@@ -584,6 +727,13 @@ const toast = function (message, options = {}) {
             // If consumer needs the element, it is returned by toast() but we ignore here.
             // They can still call toast(...) with mode: 'confirm' to get the element and read el.result
             void el; // no-op
+        });
+    };
+
+    // Close every toast currently on screen. Confirm dialogs settle as a cancel.
+    toast.dismissAll = function () {
+        document.querySelectorAll('.ts-toast').forEach((el) => {
+            if (typeof el.close === 'function') el.close();
         });
     };
 

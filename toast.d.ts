@@ -18,6 +18,8 @@ export type ConfirmResult = boolean | string | null;
 export interface ToastElement extends HTMLDivElement {
   /** Present in confirm mode: resolves when the user confirms, cancels or dismisses. */
   result?: Promise<ConfirmResult>;
+  /** Dismiss this toast now. On a confirm dialog this settles as a cancel. */
+  close(): void;
 }
 
 export interface ToastOptions {
@@ -29,6 +31,11 @@ export interface ToastOptions {
   /** Emoji or text used instead of the bundled animated icon. */
   icon?: string | null;
   showLoader?: boolean;
+  /**
+   * `message` is written as HTML by default, for backwards compatibility.
+   * Pass `false` to render it as plain text — do that for anything user-supplied.
+   */
+  allowHtml?: boolean;
   /** `'confirm'` (alias `'swal'`) renders a modal dialog instead of a toast. */
   mode?: 'alert' | 'confirm' | 'swal';
   dismissOnClick?: boolean;
@@ -50,6 +57,8 @@ export interface ConfirmOptions extends ToastOptions {
   cancelButtonColor?: string | null;
   useOverlay?: boolean;
   closeOnOverlayClick?: boolean;
+  /** Escape cancels the dialog. Defaults to true. */
+  closeOnEscape?: boolean;
   showClose?: boolean;
   /** Receives the input's value when `input` is set, otherwise `true`. */
   onConfirm?: (value: string | true, el: ToastElement) => void;
@@ -76,6 +85,8 @@ export interface Toast {
    * and `null` on cancel/dismiss — so an empty submission is not read as a cancel.
    */
   confirm(message: string, options?: ConfirmOptions): Promise<ConfirmResult>;
+  /** Dismiss every toast on screen; open confirm dialogs settle as a cancel. */
+  dismissAll(): void;
 }
 
 declare const toast: Toast;

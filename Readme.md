@@ -103,6 +103,24 @@ toast('Are you sure?', {
 });
 ```
 
+### ⌨️ Keyboard and screen readers
+
+Confirm dialogs take focus when they open, keep Tab inside themselves while they are
+open, and hand focus back to whatever opened them when they close. Escape cancels, and
+Enter submits a single-line input. Without this the element that opened the dialog kept
+focus behind the backdrop, so Enter or Space re-triggered it and stacked a second dialog.
+
+Toast containers are announced as `aria-live="polite"`; `error` and `warning` toasts get
+`role="alert"`. Everything respects `prefers-reduced-motion`.
+
+### ✋ Closing toasts yourself
+
+```javascript
+const t = toast('Working…', { duration: 0 });
+t.close();       // dismiss this one
+toast.dismissAll(); // dismiss everything; open dialogs settle as a cancel
+```
+
 ### ⏳ Loading → Update
 ```javascript
 const t = toast.loading('Uploading…', { type: 'info' });
@@ -120,6 +138,8 @@ t.update('Done!', { type: 'success', duration: 2000 });
 | `duration`   | `number`   | `3000`        | Duration in milliseconds before the toast automatically dismisses.                            |
 | `icon`       | `string` or `null` | `null` | Optional custom icon displayed as text (e.g., emoji) before the toast message. If not set, a default GIF icon is used based on the `type`. |
 | `showLoader` | `boolean`  | `false`       | Whether to show a loader/progress bar animation on the toast during its visible duration.    |
+| `allowHtml`  | `boolean`  | `true`        | `message` is written as HTML. Pass `false` to render it as plain text — do that for anything user-supplied, or you have an XSS hole. |
+| `closeOnEscape` | `boolean` | `true`      | Confirm dialogs only. Escape cancels the dialog.                                              |
 | `onClick`    | `function` or `null` | `null` | Callback function executed when the toast is clicked.                                        |
 | `onShow`     | `function` or `null` | `null` | Callback function executed when the toast appears (after it's added to the DOM and shown).   |
 | `onDismiss`  | `function` or `null` | `null` | Callback function executed when the toast is dismissed and removed from the DOM.             |
