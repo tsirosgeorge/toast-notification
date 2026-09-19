@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [6.0.0] - 2026-09-19
 
 ### Changed
 - **Breaking:** `message` is rendered as text. It previously went through `innerHTML`, so
