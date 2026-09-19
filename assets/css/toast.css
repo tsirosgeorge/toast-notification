@@ -352,3 +352,49 @@
 body.ts-toast-no-scroll {
     overflow: hidden;
 }
+
+/* Progress bar counting down the remaining time */
+@keyframes ts-toast-progress {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+}
+
+.ts-toast-container .ts-toast-progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    transform-origin: left center;
+    border-radius: 0 0 8px 8px;
+    background: var(--toast-progress-color, currentColor);
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.ts-toast-container .ts-toast-success .ts-toast-progress { background: var(--toast-success-color, #17a35c); }
+.ts-toast-container .ts-toast-error   .ts-toast-progress { background: var(--toast-error-color, #ef4444); }
+.ts-toast-container .ts-toast-warning .ts-toast-progress { background: var(--toast-warning-color, #f0a020); }
+.ts-toast-container .ts-toast-info    .ts-toast-progress { background: var(--toast-info-color, #3b82f6); }
+
+/* Action button inside a toast (e.g. Undo) */
+.ts-toast-container .ts-toast-action {
+    /* Toasts lay out row-reverse, so the lowest order sits at the right-hand end:
+       icon, message, then the action button. */
+    order: -1;
+    flex: none;
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--toast-action-color, #3b82f6);
+    font: inherit;
+    font-weight: 600;
+    padding: 4px 8px;
+    margin-left: 4px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.ts-toast-container .ts-toast-action:hover {
+    background: var(--toast-action-hover, rgba(59, 130, 246, 0.12));
+}

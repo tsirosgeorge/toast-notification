@@ -31,6 +31,12 @@ export interface ToastOptions {
   /** Emoji or text used instead of the bundled animated icon. */
   icon?: string | null;
   showLoader?: boolean;
+  /** Freeze the countdown while the pointer or keyboard focus is on the toast. */
+  pauseOnHover?: boolean;
+  /** Thin bar counting the remaining time down. Needs `duration > 0`. */
+  showProgress?: boolean;
+  /** Renders a button inside the toast, e.g. Undo. */
+  action?: ToastAction | null;
   /**
    * `message` is written as HTML by default, for backwards compatibility.
    * Pass `false` to render it as plain text — do that for anything user-supplied.
@@ -66,6 +72,21 @@ export interface ConfirmOptions extends ToastOptions {
   onResult?: (result: ConfirmResult, el: ToastElement) => void;
 }
 
+export interface ToastAction {
+  /** Button label. */
+  text: string;
+  /** Runs on click; the toast closes afterwards. */
+  onClick?: (el: ToastElement) => void;
+}
+
+export interface PromiseMessages<T = unknown> {
+  loading?: string;
+  /** A function receives the resolved value. */
+  success?: string | ((value: T) => string);
+  /** A function receives the rejection reason. */
+  error?: string | ((err: unknown) => string);
+}
+
 export interface LoadingHandle {
   update(message: string, options?: ToastOptions): void;
   close(): void;
@@ -87,6 +108,14 @@ export interface Toast {
   confirm(message: string, options?: ConfirmOptions): Promise<ConfirmResult>;
   /** Dismiss every toast on screen; open confirm dialogs settle as a cancel. */
   dismissAll(): void;
+  /**
+   * Shows a loading toast that becomes the success or error message when
+   * `promise` settles. Resolves with the promise's value, and re-throws its
+   * rejection so the caller still handles the failure.
+   */
+  promise<T>(promise: Promise<T>, messages?: PromiseMessages<T>, options?: ToastOptions): Promise<T>;
+  /** Options applied to every toast unless the call overrides them. */
+  defaults: ToastOptions;
 }
 
 declare const toast: Toast;

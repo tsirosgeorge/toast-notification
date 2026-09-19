@@ -14,6 +14,7 @@ const TS_TOAST_CDN = (typeof window !== 'undefined' && window.TS_TOAST_ASSET_BAS
 // group, so only the last dialog to close may release it.
 let tsToastOpenModals = 0;
 let tsToastPrevOverflow = '';
+let tsToastPrevPaddingRight = '';
 
 const tsToastReducedMotion = () =>
     typeof window !== 'undefined' &&
@@ -52,6 +53,10 @@ let tsToastIdCounter = 0;
             .ts-toast-container.bottom-center { bottom: 1rem; left: 50%; transform: translateX(-50%); align-items: center; }
             .ts-toast-container.center { top: 50%; left: 50%; transform: translate(-50%, -50%); align-items: center; }
             .ts-toast-overlay.center { align-items: center; justify-content: center; }
+            @keyframes ts-toast-progress { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+            .ts-toast .ts-toast-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; transform-origin: left center; border-radius: 0 0 8px 8px; background: currentColor; opacity: 0.35; pointer-events: none; }
+            .ts-toast .ts-toast-action { order: -1; flex: none; appearance: none; border: 0; background: transparent; color: #3b82f6; font: inherit; font-weight: 600; padding: 4px 8px; margin-left: 4px; border-radius: 6px; cursor: pointer; }
+            .ts-toast .ts-toast-action:hover { background: rgba(59,130,246,0.12); }
             .ts-toast-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2147483646; }
             .ts-toast.ts-toast-confirm { max-width: min(92vw, 440px); width: max(320px, 60%); flex-direction: column; gap: 12px; padding: 16px 20px; background: var(--toast-bg, #fff); color: var(--toast-color, #000); border: 1px solid var(--toast-border, #e5e7eb); border-radius: 12px; box-shadow: var(--toast-shadow, 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)); text-align: center; }
             .ts-toast.ts-toast-confirm .ts-toast-content { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
@@ -75,6 +80,9 @@ let tsToastIdCounter = 0;
     })();
 
 const toast = function (message, options = {}) {
+        // Site-wide defaults, so a page can turn on things like showProgress once
+        // instead of repeating them at every call site.
+        options = { ...(toast.defaults || {}), ...options };
         const {
             position = 'top-right',
             animation = 'slide-right', // Default fallback animation
@@ -103,6 +111,12 @@ const toast = function (message, options = {}) {
             useOverlay = true,
             closeOnOverlayClick = true,
             showClose = false,
+            // Freeze the countdown while the pointer or keyboard focus is on the toast
+            pauseOnHover = true,
+            // Thin bar counting the remaining time down
+            showProgress = false,
+            // { text, onClick } renders a button inside the toast, e.g. Undo
+            action = null,
             // Escape cancels a confirm dialog
             closeOnEscape = true,
             // `message` is written as HTML for backwards compatibility. Pass false to
@@ -329,6 +343,31 @@ const toast = function (message, options = {}) {
             confirmBtn.addEventListener('click', (e) => { e.stopPropagation(); resolveAndClose(true); });
         }
 
+        // Action button (e.g. Undo). Clicking it runs the callback and closes the toast.
+        if (!isConfirm && action && typeof action === 'object' && action.text) {
+            const actionBtn = document.createElement('button');
+            actionBtn.className = 'ts-toast-action';
+            actionBtn.type = 'button';
+            actionBtn.textContent = action.text;
+            actionBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // do not also trigger dismissOnClick
+                if (typeof action.onClick === 'function') action.onClick(toastElement);
+                toastElement._dismiss();
+            });
+            toastElement.appendChild(actionBtn);
+        }
+
+        // Progress bar. The width is driven by a CSS animation whose duration is the
+        // toast's own, so pausing it is one property and never drifts from the timer.
+        let progressBar = null;
+        if (!isConfirm && showProgress && duration > 0 && !reducedMotion) {
+            progressBar = document.createElement('div');
+            progressBar.className = 'ts-toast-progress';
+            progressBar.style.animation = `ts-toast-progress ${duration}ms linear forwards`;
+            progressBar.style.animationPlayState = 'paused';
+            toastElement.appendChild(progressBar);
+        }
+
         // Loader Element
         let loader = null;
         if (showLoader) {
@@ -339,6 +378,7 @@ const toast = function (message, options = {}) {
 
         // Container/Overlay
         let overlay = null;
+        let containerEl = null;
         if (isConfirm && useOverlay) {
             overlay = document.createElement('div');
             // A modal centres by default. The `position` default of 'top-right' is meant
@@ -387,6 +427,7 @@ const toast = function (message, options = {}) {
                 container.setAttribute('aria-relevant', 'additions');
             }
             container.appendChild(toastElement);
+            containerEl = container;
         }
 
         if (isConfirm) {
@@ -399,6 +440,15 @@ const toast = function (message, options = {}) {
             tsToastOpenModals += 1;
             if (tsToastOpenModals === 1) {
                 tsToastPrevOverflow = document.body.style.overflow;
+                tsToastPrevPaddingRight = document.body.style.paddingRight;
+                // Hiding the scrollbar makes the page wider, which shifts the whole
+                // layout sideways as the dialog opens. Pad by the scrollbar's width to
+                // hold it still. A no-op where scrollbars are overlays, as on macOS.
+                const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+                if (scrollbar > 0) {
+                    const current = parseFloat(window.getComputedStyle(document.body).paddingRight) || 0;
+                    document.body.style.paddingRight = `${current + scrollbar}px`;
+                }
                 document.body.style.overflow = 'hidden';
             }
 
@@ -441,7 +491,10 @@ const toast = function (message, options = {}) {
             releaseModal = () => {
                 document.removeEventListener('keydown', onKeydown, true);
                 tsToastOpenModals = Math.max(0, tsToastOpenModals - 1);
-                if (tsToastOpenModals === 0) document.body.style.overflow = tsToastPrevOverflow;
+                if (tsToastOpenModals === 0) {
+                    document.body.style.overflow = tsToastPrevOverflow;
+                    document.body.style.paddingRight = tsToastPrevPaddingRight;
+                }
                 // Hand the keyboard back to whatever opened the dialog.
                 if (previouslyFocused && typeof previouslyFocused.focus === 'function' &&
                     document.contains(previouslyFocused)) {
@@ -463,6 +516,10 @@ const toast = function (message, options = {}) {
             toastElement.classList.add('ts-toast-show');
         }, 100);
 
+        // The loader always ran for 2s, so with a shorter duration the toast was gone
+        // before the icon it reveals ever appeared.
+        const loaderMs = duration > 0 ? Math.min(2000, Math.max(0, duration - 500)) : 2000;
+
         // Handle Loader and Icon
         if (showLoader && loader) {
             setTimeout(() => {
@@ -474,7 +531,7 @@ const toast = function (message, options = {}) {
                     if (isConfirm && contentRow) contentRow.appendChild(iconElement);
                     else toastElement.appendChild(iconElement); // Add icon only if not present
                 }
-            }, 2000); // Simulate a loading period of 2 seconds
+            }, loaderMs);
         }
         if (!showLoader) {
             // For confirm, icon already added above inside contentRow; avoid moving it
@@ -483,26 +540,70 @@ const toast = function (message, options = {}) {
             }
         }
 
-        // Auto remove after the duration (skip for confirm mode or when duration <= 0)
-        if (!isConfirm && duration > 0) {
-            const autoRemove = setTimeout(() => {
-                removeWithAnimation(toastElement, () => {
-                    if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
-                });
-            }, duration);
-            toastElement._autoRemove = autoRemove;
+        // Dismissal state lives on the element so toast.update() can rebind the callback
+        // and reuse this exact removal path instead of keeping its own copy of it.
+        toastElement._onDismiss = typeof onDismiss === 'function' ? onDismiss : null;
+
+        // A plain setTimeout cannot be paused, so the countdown is tracked by hand:
+        // `remaining` is what is left, and hovering banks it.
+        let remaining = duration;
+        let timerId = null;
+        let startedAt = 0;
+
+        const stopTimer = () => {
+            if (timerId) { clearTimeout(timerId); timerId = null; }
+        };
+
+        const startTimer = () => {
+            if (isConfirm || remaining <= 0 || timerId) return;
+            startedAt = Date.now();
+            timerId = setTimeout(() => { timerId = null; toastElement._dismiss(); }, remaining);
+            if (progressBar) progressBar.style.animationPlayState = 'running';
+        };
+
+        const pauseTimer = () => {
+            if (!timerId) return;
+            clearTimeout(timerId);
+            timerId = null;
+            remaining -= Date.now() - startedAt;
+            if (progressBar) progressBar.style.animationPlayState = 'paused';
+        };
+
+        toastElement._dismiss = () => {
+            if (toastElement._removing) return; // never run the exit twice
+            toastElement._removing = true;
+            stopTimer();
+            removeWithAnimation(toastElement, () => {
+                if (toastElement._onDismiss) toastElement._onDismiss(toastElement);
+                // Containers used to pile up in the DOM, one per position, forever.
+                if (containerEl && !containerEl.children.length) containerEl.remove();
+            });
+        };
+
+        // Lets toast.update() re-arm the countdown without reaching into internals.
+        toastElement._setDuration = (ms) => {
+            stopTimer();
+            remaining = ms;
+            startTimer();
+        };
+
+        startTimer();
+
+        if (!isConfirm && pauseOnHover) {
+            // Give the reader a chance to finish the sentence.
+            toastElement.addEventListener('mouseenter', pauseTimer);
+            toastElement.addEventListener('mouseleave', startTimer);
+            toastElement.addEventListener('focusin', pauseTimer);
+            toastElement.addEventListener('focusout', startTimer);
         }
 
         // Add event listener for closing the toast when clicked (disabled in confirm mode)
         if (!isConfirm && dismissOnClick) {
             toastElement.addEventListener('click', () => {
-                if (toastElement._autoRemove) clearTimeout(toastElement._autoRemove); // Clear the auto-remove timeout
                 // onClick belongs to the click, not to the end of the exit animation,
                 // which is where it used to fire half a second late.
                 if (onClick && typeof onClick === 'function') onClick(toastElement);
-                removeWithAnimation(toastElement, () => {
-                    if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
-                });
+                toastElement._dismiss();
             });
         }
 
@@ -525,23 +626,15 @@ const toast = function (message, options = {}) {
                 const dy = Math.abs(touchStartY - e.changedTouches[0].screenY);
                 // Only a mostly-horizontal swipe dismisses, so scrolling the page past a
                 // toast no longer throws it away on a bit of sideways drift.
-                if (dx > 50 && dx > dy) {
-                    if (toastElement._autoRemove) clearTimeout(toastElement._autoRemove);
-                    removeWithAnimation(toastElement, () => {
-                        if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
-                    });
-                }
+                if (dx > 50 && dx > dy) toastElement._dismiss();
             });
         }
 
         // Let callers dismiss a toast they are holding, instead of only waiting out
         // the duration or making the user click it.
         toastElement.close = () => {
-            if (toastElement._autoRemove) clearTimeout(toastElement._autoRemove);
             if (isConfirm) { resolveAndClose(false); return; }
-            removeWithAnimation(toastElement, () => {
-                if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
-            });
+            toastElement._dismiss();
         };
 
         return toastElement;
@@ -570,10 +663,9 @@ const toast = function (message, options = {}) {
             type = null,
             icon = null,
             showLoader = false,
-            duration = 3000, // Default duration (in ms)
-            onClick = null,      // Custom onClick event listener
-            onShow = null,       // Custom onShow event listener
-            onDismiss = null     // Custom onDismiss event listener
+            duration = 3000, // Default duration (in ms); 0 keeps the toast on screen
+            allowHtml = true,
+            onDismiss = null     // Replaces the callback the toast was created with
         } = options;
 
         // Remove old loader (if any)
@@ -591,7 +683,8 @@ const toast = function (message, options = {}) {
         }
         const toastBody = toastElement.querySelector('.ts-toast-body');
         if (toastBody) {
-            toastBody.innerHTML = message;
+            if (allowHtml) toastBody.innerHTML = message;
+            else toastBody.textContent = message;
         }
 
         // Handle Icon update only if it's new or hasn't been set yet
@@ -619,9 +712,12 @@ const toast = function (message, options = {}) {
             iconElement.appendChild(img);
         }
 
-        // Append the new icon immediately (inside the content row for confirm dialogs)
-        const contentRow = toastElement.querySelector('.ts-toast-content');
-        (contentRow || toastElement).appendChild(iconElement);
+        // Only attach an icon we actually have. Without a type and without an explicit
+        // icon this used to append an empty <span><img></span>.
+        if (icon || iconElement.querySelector('img[src]')) {
+            const contentRow = toastElement.querySelector('.ts-toast-content');
+            (contentRow || toastElement).appendChild(iconElement);
+        }
 
         // Handle loader if requested
         if (showLoader) {
@@ -630,33 +726,19 @@ const toast = function (message, options = {}) {
             toastElement.appendChild(loader);
             setTimeout(() => {
                 loader.classList.add('done');
-            }, 2000);  // Simulate loader completion after 2 seconds
+            }, duration > 0 ? Math.min(2000, Math.max(0, duration - 500)) : 2000);
         }
 
-        // Clear previous auto-remove timer if needed
-        if (toastElement._autoRemove) {
-            clearTimeout(toastElement._autoRemove);
+        // Rebind the dismiss callback rather than leaving the creation-time one in place,
+        // which meant an updated toast fired two different onDismiss handlers.
+        if (typeof onDismiss === 'function') toastElement._onDismiss = onDismiss;
+
+        // Re-arm the countdown through the toast's own timer, so duration: 0 keeps the
+        // toast on screen. This used to schedule setTimeout(..., 0) and remove it at once,
+        // which broke every `toast.loading(...).update(msg, { duration: 0 })`.
+        if (typeof toastElement._setDuration === 'function') {
+            toastElement._setDuration(duration);
         }
-
-        // Set the auto-remove timer again to ensure toast disappears after the duration
-        const autoRemove = setTimeout(() => {
-            const removeWithAnimation = (el, cb) => {
-                el.classList.add('ts-toast-slide-out');
-                el.classList.remove('ts-toast-show');
-                el.style.animation = '';
-                setTimeout(() => {
-                    el.classList.remove('ts-toast-slide-out');
-                    if (el.parentNode) el.parentNode.removeChild(el);
-                    if (typeof cb === 'function') cb();
-                }, 500);
-            };
-
-            removeWithAnimation(toastElement, () => {
-                if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
-            });
-        }, duration);
-
-        toastElement._autoRemove = autoRemove; // Re-set the auto-remove timer
     };
 
     toast.loading = function (message, options = {}) {
@@ -729,6 +811,34 @@ const toast = function (message, options = {}) {
             void el; // no-op
         });
     };
+
+    // Wraps an async action: one loading toast that becomes the success or error
+    // message, instead of hand-rolling loading/update/catch at every call site.
+    toast.promise = function (promise, messages = {}, options = {}) {
+        const {
+            loading = 'Loading…',
+            success = 'Done',
+            error = 'Something went wrong'
+        } = messages;
+
+        const handle = toast.loading(loading, options);
+        // Messages may be functions so they can name what actually came back.
+        const text = (msg, value) => (typeof msg === 'function' ? msg(value) : msg);
+
+        return Promise.resolve(promise).then(
+            (value) => {
+                handle.update(text(success, value), { type: 'success', duration: options.duration });
+                return value;
+            },
+            (err) => {
+                handle.update(text(error, err), { type: 'error', duration: options.duration });
+                throw err; // the caller still owns the failure
+            }
+        );
+    };
+
+    // Options applied to every toast unless the call overrides them.
+    toast.defaults = {};
 
     // Close every toast currently on screen. Confirm dialogs settle as a cancel.
     toast.dismissAll = function () {

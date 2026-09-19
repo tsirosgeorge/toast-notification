@@ -21,7 +21,7 @@
     "build:css": "cleancss -o assets/css/toast.min.css assets/css/toast.css",
     "build:js": "terser toast.js --compress --mangle --output toast.min.js",
     "build": "npm run sync:version && npm run build:module && npm run build:css && npm run build:js",
-    "version": "npm run build && git add -A",
+    "version": "node scripts/stamp-changelog.mjs && npm run build && git add -A",
     "prepublishOnly": "npm run build",
     "release": "npm version ${V:-patch} && git push origin main --follow-tags"
   },

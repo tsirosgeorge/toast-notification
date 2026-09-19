@@ -2,6 +2,37 @@
 
 ## [Unreleased]
 
+### Added
+- `pauseOnHover` (default `true`): the countdown freezes while the pointer or keyboard
+  focus is on a toast, so a message can no longer vanish mid-sentence.
+- `showProgress`: a bar counting the remaining time down, which pauses with the timer.
+- `action: { text, onClick }`: a button inside a toast, e.g. Undo.
+- `toast.promise(promise, { loading, success, error })`: one loading toast that becomes
+  the success or error message. Resolves with the promise's value and re-throws its
+  rejection, so the caller still owns the failure. `success` and `error` may be functions
+  and receive the value or the error.
+- `toast.defaults`: options applied to every toast unless the call overrides them.
+
+### Fixed
+- `toast.update()` honours `duration: 0`. It had no `duration > 0` guard, so it scheduled
+  a removal at 0ms and dropped the toast immediately — which broke every
+  `toast.loading(...).update(msg, { duration: 0 })`.
+- `toast.update()` rebinds `onDismiss` instead of leaving the creation-time callback in
+  place, so one toast no longer fires two different dismiss handlers.
+- `toast.update()` reuses the toast's own removal path. Its private copy of that logic
+  skipped the exit transform and the reduced-motion handling, so updated toasts left the
+  screen differently from every other toast.
+- The loader no longer always runs for 2s: with a shorter `duration` the toast was gone
+  before the icon it reveals ever appeared.
+- `toast.update()` without a `type` no longer appends an empty `<img>`.
+- Toast containers are removed once they empty, instead of accumulating in the DOM.
+- A toast can no longer run its exit twice, and so can no longer fire `onDismiss` twice.
+- Opening a confirm dialog no longer shifts the page sideways on platforms with classic
+  scrollbars: hiding the page scrollbar is now compensated with padding. (Unverifiable on
+  macOS, which uses overlay scrollbars; the compensation is a no-op there.)
+
+## [5.5.0] - 2026-09-19
+
 ### Fixed
 - A confirm dialog now takes focus when it opens. It did not before, so the button that
   opened it kept focus behind the backdrop and Enter or Space re-triggered it, stacking a

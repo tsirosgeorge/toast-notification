@@ -103,6 +103,37 @@ toast('Are you sure?', {
 });
 ```
 
+### 🔄 Wrapping an async action
+
+```javascript
+const order = await toast.promise(saveOrder(cart), {
+  loading: 'Saving your order…',
+  success: (order) => `Order #${order.id} saved.`,
+  error: (err) => `Could not save: ${err.message}`,
+});
+```
+
+One loading toast becomes the success or error message. It resolves with the promise's
+value and re-throws its rejection, so the caller still handles the failure.
+
+### ↩️ Action button
+
+```javascript
+toast.success('Item removed from your cart.', {
+  duration: 8000,
+  showProgress: true,
+  action: { text: 'Undo', onClick: () => restoreItem() },
+});
+```
+
+### ⚙️ Site-wide defaults
+
+```javascript
+toast.defaults = { position: 'bottom-right', showProgress: true, duration: 4000 };
+```
+
+Applied to every toast unless the individual call overrides them.
+
 ### ⌨️ Keyboard and screen readers
 
 Confirm dialogs take focus when they open, keep Tab inside themselves while they are
@@ -138,6 +169,9 @@ t.update('Done!', { type: 'success', duration: 2000 });
 | `duration`   | `number`   | `3000`        | Duration in milliseconds before the toast automatically dismisses.                            |
 | `icon`       | `string` or `null` | `null` | Optional custom icon displayed as text (e.g., emoji) before the toast message. If not set, a default GIF icon is used based on the `type`. |
 | `showLoader` | `boolean`  | `false`       | Whether to show a loader/progress bar animation on the toast during its visible duration.    |
+| `pauseOnHover` | `boolean` | `true`      | Freeze the countdown while the pointer or keyboard focus is on the toast.                      |
+| `showProgress` | `boolean` | `false`     | Thin bar counting the remaining time down. Needs `duration > 0`; pauses with `pauseOnHover`.   |
+| `action`     | `object` or `null` | `null` | `{ text, onClick }` renders a button inside the toast, e.g. Undo. Clicking it runs `onClick` and closes the toast. |
 | `allowHtml`  | `boolean`  | `true`        | `message` is written as HTML. Pass `false` to render it as plain text — do that for anything user-supplied, or you have an XSS hole. |
 | `closeOnEscape` | `boolean` | `true`      | Confirm dialogs only. Escape cancels the dialog.                                              |
 | `onClick`    | `function` or `null` | `null` | Callback function executed when the toast is clicked.                                        |

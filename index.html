@@ -249,6 +249,9 @@ footer { border-top: 1px solid var(--line); padding: 26px 0 44px; color: var(--m
       <button class="chip" data-demo="prompt"><span class="dot"></span>confirm with input</button>
       <button class="chip" data-demo="loading"><span class="dot"></span>toast.loading()</button>
       <button class="chip" data-demo="stack"><span class="dot"></span>stack a few</button>
+      <button class="chip" data-demo="progress"><span class="dot"></span>progress + hover to pause</button>
+      <button class="chip" data-demo="action"><span class="dot"></span>action button</button>
+      <button class="chip" data-demo="promise"><span class="dot"></span>toast.promise()</button>
     </div>
   </section>
 
@@ -319,8 +322,14 @@ footer { border-top: 1px solid var(--line); padding: 26px 0 44px; color: var(--m
               <span class="hint">0 keeps it on screen.</span>
             </div>
             <div class="field">
+              <label for="actionText">Action button</label>
+              <input id="actionText" type="text" placeholder="e.g. Undo — blank for none">
+            </div>
+            <div class="field" style="grid-column: 1 / -1;">
               <label>&nbsp;</label>
               <label class="switch"><input type="checkbox" id="dismissOnClick" checked> Dismiss on click</label>
+              <label class="switch"><input type="checkbox" id="pauseOnHover" checked> Pause the countdown on hover</label>
+              <label class="switch"><input type="checkbox" id="showProgress"> Show a progress bar</label>
               <label class="switch"><input type="checkbox" id="showLoader"> Show loader</label>
             </div>
           </div>
@@ -448,6 +457,22 @@ const demos = {
   stack: () => {
     ['info', 'success', 'warning', 'error'].forEach((type, i) =>
       setTimeout(() => toast(`This is a ${type} toast.`, { type, duration: 4000 }), i * 220));
+  },
+  progress: () => toast.info('Hover me — the countdown stops.', { duration: 6000, showProgress: true }),
+  action: () => toast.success('Item removed from your cart.', {
+    duration: 8000,
+    showProgress: true,
+    action: { text: 'Undo', onClick: () => log('Undo clicked') }
+  }),
+  promise: () => {
+    const work = new Promise((resolve, reject) =>
+      setTimeout(() => (Math.random() > 0.35 ? resolve({ id: 42 }) : reject(new Error('network'))), 1800));
+    toast.promise(work, {
+      loading: 'Saving your order…',
+      success: (order) => `Order #${order.id} saved.`,
+      error: (err) => `Could not save: ${err.message}`
+    }).then((o) => log(`promise resolved with #${o.id}`))
+      .catch((e) => log(`promise rejected: ${e.message}`));
   }
 };
 $('quick').addEventListener('click', (e) => {
@@ -486,7 +511,10 @@ function buildOptions() {
     const d = Number($('duration').value);
     if (Number.isFinite(d) && d !== 3000) o.duration = d;
     if (!on('dismissOnClick')) o.dismissOnClick = false;
+    if (!on('pauseOnHover')) o.pauseOnHover = false;
+    if (on('showProgress')) o.showProgress = true;
     if (on('showLoader')) o.showLoader = true;
+    if (val('actionText')) o.action = { text: val('actionText') };
   } else {
     if (val('title')) o.title = val('title');
     put('confirmText', val('confirmText'), 'Yes');
@@ -513,7 +541,9 @@ function highlight(options) {
     ? '{\n' + entries.map(([k, v]) =>
         `  <span class="tok-key">${k}</span>: ` +
         (typeof v === 'string' ? `<span class="tok-str">${esc(JSON.stringify(v))}</span>`
-                               : `<span class="tok-num">${v}</span>`)
+         : (v && typeof v === 'object')
+            ? `{ <span class="tok-key">text</span>: <span class="tok-str">${esc(JSON.stringify(v.text))}</span>, <span class="tok-key">onClick</span>: () =&gt; {} }`
+            : `<span class="tok-num">${v}</span>`)
       ).join(',\n') + '\n}'
     : '';
 
@@ -552,6 +582,7 @@ $('run').addEventListener('click', async () => {
   if (mode === 'toast') {
     toast(message, {
       ...options,
+      action: options.action ? { ...options.action, onClick: () => log('action clicked') } : null,
       onShow: () => log('onShow'),
       onClick: () => log('onClick'),
       onDismiss: () => log('onDismiss')
