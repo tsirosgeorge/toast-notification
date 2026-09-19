@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [5.6.1] - 2026-09-19
 
 ### Fixed
 - A dialog opening over another one no longer dims the page a second time. Every overlay
