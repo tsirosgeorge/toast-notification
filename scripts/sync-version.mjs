@@ -12,6 +12,17 @@ if (!re.test(src)) {
   process.exit(1);
 }
 
-const out = src.replace(re, `$1${version}$2`);
-writeFileSync('toast.js', out);
+writeFileSync('toast.js', src.replace(re, `$1${version}$2`));
 console.log(`toast.js pinned to CDN assets for v${version}`);
+
+// The demo page shows the version and builds its CDN snippet from it. Hand-written,
+// it went stale immediately and told visitors to install an older release.
+const demoPath = 'index.html';
+const demo = readFileSync(demoPath, 'utf8');
+const demoRe = /(<span class="tag" id="version">v)[^<]*(<\/span>)/;
+if (!demoRe.test(demo)) {
+  console.error(`${demoPath}: could not find the version badge`);
+  process.exit(1);
+}
+writeFileSync(demoPath, demo.replace(demoRe, `$1${version}$2`));
+console.log(`${demoPath} badge set to v${version}`);
