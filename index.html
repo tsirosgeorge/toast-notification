@@ -615,9 +615,18 @@ document.addEventListener('click', async (e) => {
   }
 });
 
-/* Enter anywhere in the form runs the current config. */
+/* Enter in a text field runs the current config.
+   Not on a <select>, where Enter commits the highlighted option — treating that as
+   "Run" opened a dialog the moment you picked a field type with the keyboard, and
+   clicking Run afterwards then opened a second one. Buttons and checkboxes already
+   act on Enter/Space themselves, and a textarea needs Enter for newlines. */
+const RUNS_ON_ENTER = new Set(['text', 'email', 'password', 'number', 'search', 'url', 'tel']);
 $('controls').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); $('run').click(); }
+  if (e.key !== 'Enter') return;
+  const el = e.target;
+  if (el.tagName !== 'INPUT' || !RUNS_ON_ENTER.has(el.type)) return;
+  e.preventDefault();
+  $('run').click();
 });
 
 render();

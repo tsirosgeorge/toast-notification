@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- A dialog opening over another one no longer dims the page a second time. Every overlay
+  painted its own 50% black, so two stacked dialogs left the page nearly opaque.
+- Demo: Enter is how a `<select>` commits the highlighted option, but the playground
+  treated Enter anywhere in its options form as "Run". Choosing a field type with the
+  keyboard therefore opened the dialog immediately, and clicking Run afterwards opened a
+  second one. The same handler fired for the checkboxes and the tab buttons, which act on
+  Enter themselves and so double-fired. Enter now runs the config only from a text input.
+
 ## [5.6.0] - 2026-09-19
 
 ### Added

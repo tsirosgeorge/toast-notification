@@ -53,6 +53,7 @@ let tsToastIdCounter = 0;
             .ts-toast-container.bottom-center { bottom: 1rem; left: 50%; transform: translateX(-50%); align-items: center; }
             .ts-toast-container.center { top: 50%; left: 50%; transform: translate(-50%, -50%); align-items: center; }
             .ts-toast-overlay.center { align-items: center; justify-content: center; }
+            .ts-toast-overlay.ts-toast-overlay-stacked { background: transparent; }
             @keyframes ts-toast-progress { from { transform: scaleX(1); } to { transform: scaleX(0); } }
             .ts-toast .ts-toast-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; transform-origin: left center; border-radius: 0 0 8px 8px; background: currentColor; opacity: 0.35; pointer-events: none; }
             .ts-toast .ts-toast-action { order: -1; flex: none; appearance: none; border: 0; background: transparent; color: #3b82f6; font: inherit; font-weight: 600; padding: 4px 8px; margin-left: 4px; border-radius: 6px; cursor: pointer; }
@@ -383,7 +384,10 @@ const toast = function (message, options = {}) {
             overlay = document.createElement('div');
             // A modal centres by default. The `position` default of 'top-right' is meant
             // for toasts; applying it here parked the dialog in a corner of the backdrop.
-            overlay.className = 'ts-toast-overlay' + (options.position ? ` ${position}` : '');
+            // Each backdrop paints its own 50% black, so a second dialog opening over a
+            // first turned the page almost fully dark. Only the bottom one dims.
+            const stacked = tsToastOpenModals > 0 ? ' ts-toast-overlay-stacked' : '';
+            overlay.className = 'ts-toast-overlay' + stacked + (options.position ? ` ${position}` : '');
             document.body.appendChild(overlay);
             overlay.appendChild(toastElement);
             if (showClose) {

@@ -343,6 +343,8 @@
 .ts-toast-overlay.bottom-center { align-items: flex-end; justify-content: center; padding: 1rem; }
 .ts-toast-overlay.bottom-right { align-items: flex-end; justify-content: flex-end; padding: 1rem; }
 .ts-toast-overlay.center { align-items: center; justify-content: center; padding: 1rem; }
+/* A dialog opening over another must not dim the page a second time. */
+.ts-toast-overlay.ts-toast-overlay-stacked { background: transparent; }
 
 /* Tiny utility: flex icon container */
 /* Scoped utility to avoid conflicts */
