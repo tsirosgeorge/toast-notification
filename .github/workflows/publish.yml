@@ -1,0 +1,57 @@
+name: Publish to npm
+
+# Publishes via npm trusted publishing (OIDC): no token, no 2FA prompt.
+# Requires the matching Trusted Publisher entry on npmjs.com:
+#   Package -> Settings -> Trusted Publisher -> GitHub Actions
+#   Repository: tsirosgeorge/toast-notification
+#   Workflow filename: publish.yml
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # required to mint the OIDC token npm verifies
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm 11.5.1 or newer.
+      - run: npm install -g npm@latest
+
+      - run: npm ci
+
+      # A tag that disagrees with package.json publishes the wrong version under
+      # the right name, and npm versions are immutable — so fail before that.
+      - name: Check the tag matches package.json
+        if: github.event_name == 'push'
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match package.json version $PKG"
+            exit 1
+          fi
+
+      - run: npm test
+
+      # Catch a forgotten rebuild: the committed artifacts must match the source.
+      - name: Check the build is committed
+        run: |
+          npm run build
+          if ! git diff --quiet; then
+            echo "::error::build output differs from what is committed:"
+            git diff --stat
+            exit 1
+          fi
+
+      - run: npm publish --access public
