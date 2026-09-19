@@ -52,6 +52,14 @@
     align-items: center;
 }
 
+/* Dead centre of the viewport, for alerts that should not sit in a corner. */
+.ts-toast-container.center {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    align-items: center;
+}
+
 /* General Toast styles */
 .ts-toast-container .ts-toast {
     display: flex;
@@ -334,6 +342,7 @@
 .ts-toast-overlay.bottom-left { align-items: flex-end; justify-content: flex-start; padding: 1rem; }
 .ts-toast-overlay.bottom-center { align-items: flex-end; justify-content: center; padding: 1rem; }
 .ts-toast-overlay.bottom-right { align-items: flex-end; justify-content: flex-end; padding: 1rem; }
+.ts-toast-overlay.center { align-items: center; justify-content: center; padding: 1rem; }
 
 /* Tiny utility: flex icon container */
 /* Scoped utility to avoid conflicts */

@@ -2,7 +2,9 @@ export type ToastType = 'info' | 'success' | 'warning' | 'error';
 
 export type ToastPosition =
   | 'top-left' | 'top-right' | 'top-center'
-  | 'bottom-left' | 'bottom-right' | 'bottom-center';
+  | 'bottom-left' | 'bottom-right' | 'bottom-center'
+  /** Dead centre of the viewport. Defaults to the zoom-in animation. */
+  | 'center';
 
 export type ToastAnimation =
   | 'slide-top' | 'slide-bottom' | 'slide-left' | 'slide-right'

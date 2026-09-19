@@ -114,7 +114,7 @@ t.update('Done!', { type: 'success', duration: 2000 });
 
 | Option       | Type       | Default       | Description                                                                                   |
 |--------------|------------|---------------|-----------------------------------------------------------------------------------------------|
-| `position`   | `string`   | `'top-right'` | Container position. Values: `'top-left'`, `'top-right'`, `'bottom-left'`, `'bottom-right'`, `'top-center'`, `'bottom-center'`. |
+| `position`   | `string`   | `'top-right'` | Container position. Values: `'top-left'`, `'top-right'`, `'bottom-left'`, `'bottom-right'`, `'top-center'`, `'bottom-center'`, `'center'`. `'center'` places it dead centre of the viewport and defaults to the `zoom-in` animation; it works for plain toasts and for confirm dialogs. |
 | `animation`  | `string`   | `'slide-right'` | Show animation. Examples: `'slide-right'`, `'slide-left'`, `'slide-top'`, `'slide-bottom'`, `'zoom-in'`. Hide uses reverse automatically. |
 | `type`       | `string`   | `'info'`      | Type of toast, controlling icon and styling. Possible values: `'info'`, `'success'`, `'error'`, `'warning'`. |
 | `duration`   | `number`   | `3000`        | Duration in milliseconds before the toast automatically dismisses.                            |

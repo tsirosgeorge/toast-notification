@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- `position: 'center'` places a toast in the dead centre of the viewport, and centres a
+  confirm dialog on its backdrop. Previously only the six edge positions existed, so an
+  alert could sit at an edge or at a corner but never in the middle. It defaults to the
+  `zoom-in` animation, since there is no edge for it to slide in from.
+
+### Changed
+- CI uses `actions/checkout@v5` and `actions/setup-node@v5`; the v4 actions were being
+  forced onto Node 24 with a deprecation warning.
+
 ## [5.4.0] - 2026-09-19
 
 ### Fixed

@@ -33,6 +33,8 @@ const TS_TOAST_CDN = (typeof window !== 'undefined' && window.TS_TOAST_ASSET_BAS
             /* Ensure center positions exist even if external CSS lacks them */
             .ts-toast-container.top-center { top: 1rem; left: 50%; transform: translateX(-50%); align-items: center; }
             .ts-toast-container.bottom-center { bottom: 1rem; left: 50%; transform: translateX(-50%); align-items: center; }
+            .ts-toast-container.center { top: 50%; left: 50%; transform: translate(-50%, -50%); align-items: center; }
+            .ts-toast-overlay.center { align-items: center; justify-content: center; }
             .ts-toast-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2147483646; }
             .ts-toast.ts-toast-confirm { max-width: min(92vw, 440px); width: max(320px, 60%); flex-direction: column; gap: 12px; padding: 16px 20px; background: var(--toast-bg, #fff); color: var(--toast-color, #000); border: 1px solid var(--toast-border, #e5e7eb); border-radius: 12px; box-shadow: var(--toast-shadow, 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)); text-align: center; }
             .ts-toast.ts-toast-confirm .ts-toast-content { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
@@ -107,10 +109,12 @@ const toast = function (message, options = {}) {
                 };
                 return m[a] || a;
             })(options.animation.trim())
-            : (isConfirm ? 'ts-toast-zoom-in' : (position.startsWith('top') ? 'ts-toast-slide-top'
+            // 'center' has no edge to slide in from, so it zooms like a dialog.
+            : (isConfirm || position === 'center' ? 'ts-toast-zoom-in'
+                : position.startsWith('top') ? 'ts-toast-slide-top'
                 : position.startsWith('bottom') ? 'ts-toast-slide-bottom'
                 : position.endsWith('left') ? 'ts-toast-slide-left'
-                : 'ts-toast-slide-right'));
+                : 'ts-toast-slide-right');
 
         // helper: remove with smooth CSS transition and cleanup (used by alerts)
         const removeWithAnimation = (el, callback) => {
