@@ -1,5 +1,46 @@
 # Changelog
 
+## [5.4.0] - 2026-09-19
+
+### Fixed
+- `toast.confirm()` now resolves when the dialog is dismissed. Clicking the backdrop or the
+  `(×)` button closed the dialog without calling `onResult`, so `await toast.confirm(...)`
+  never settled and the calling code stalled.
+- Confirm dialogs with an `input` can no longer be mistaken for a cancel. Confirming now
+  always resolves a string (possibly `''`) and cancelling resolves `null`; previously an
+  empty submission resolved `''`, which is falsy and indistinguishable from a cancel.
+- `toast.update()` no longer overwrites `className`. It was dropping `ts-toast-show`,
+  dropping `ts-toast-confirm` (breaking confirm layouts), writing the wrong `show` class,
+  and leaking the position onto the toast instead of its container.
+- `toast.success()` / `toast.error()` return the toast element, so the result can be passed
+  to `toast.update()`.
+- Confirm dialogs centre on the backdrop by default. The `position` default of `top-right`
+  is meant for toasts and parked modals in a corner.
+- Icon GIFs are no longer requested with a cache-busting query string, so the browser and
+  the CDN can cache them instead of refetching up to 157 KB per toast.
+- CDN asset URLs are derived from a single version constant kept in sync with
+  `package.json`. They were six hand-edited literals and had gone stale (5.3.3 loaded
+  5.3.0 assets).
+- The stylesheet `<link>` no longer declares a top-level `const link`, which could collide
+  with a page's own global, and is not injected twice if the script loads twice.
+
+### Added
+- `toast.warning()` and `toast.info()` helpers, matching `success` / `error`.
+- TypeScript declarations (`toast.d.ts`), including the confirm resolution contract.
+- `window.TS_TOAST_ASSET_BASE` to self-host the CSS and icons, and `window.TS_TOAST_NO_CSS`
+  to skip the CDN stylesheet entirely.
+- `exports` entries for `assets/css/toast.css` and `assets/css/toast.min.css`, which the
+  subpath-less `exports` map had made unimportable from bundlers.
+
+### Changed
+- `toast.module.js` is generated from `toast.js` by `npm run build` instead of being a
+  hand-maintained copy that had to be edited twice for every fix.
+- Dropped `assets/img/old/` from the published package: 909 kB → 365 kB.
+- Renamed the `publish` script to `release`. npm runs `publish` as a lifecycle hook after
+  `npm publish`, so a `publish` script calling `npm publish` recursed.
+- Rebuilt the demo page (`index.html`) around quick one-click examples and a playground
+  that shows the code for the current options.
+
 ## [5.3.3] - 2025-12-31
 
 ### Fixed

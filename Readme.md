@@ -8,7 +8,7 @@ A lightweight, customizable, and dependency-free toast notification system writt
 
 ## 📦 Include package via cdn
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.3/toast.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.4.0/toast.min.js"></script>
 ```
 
 ## 📦 Include package via npm
@@ -41,7 +41,11 @@ toast('Data saved successfully!', {
 ```javascript
 toast.success('Saved!');
 toast.error('Failed!');
+toast.warning('Careful!');
+toast.info('Heads up.');
 ```
+
+Each helper returns the toast element, so you can hand it to `toast.update()` later.
 
 ### ⚠️ Confirm (SweetAlert-like)
 - Promise API
@@ -75,12 +79,18 @@ const name = await toast.confirm('Enter your name:', {
   confirmText: 'Submit',
   cancelText: 'Cancel',
 });
-if (name) {
-  console.log('Hello', name);
+if (name !== null) {
+  console.log('Hello', name); // may be '' if they submitted an empty field
 } else {
   console.log('Cancelled');
 }
 ```
+
+> **Resolution contract.** Without `input`, `toast.confirm()` resolves `true` on confirm and
+> `false` on cancel. With `input`, it resolves the field's **string** value on confirm — which
+> may be `''` — and `null` on cancel. Check against `null`, not truthiness, or an empty
+> submission reads as a cancel. Cancelling, clicking the backdrop and the `(×)` button all
+> resolve the promise.
 
 - Callback API
 ```javascript

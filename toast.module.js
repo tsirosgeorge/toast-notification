@@ -1,18 +1,35 @@
 "use strict";
 
-// Dynamically load the external CSS file (same as toast.js)
-const link = document.createElement("link");
-link.rel = "stylesheet";
-link.href = "https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/css/toast.min.css";
-document.head.appendChild(link);
+// Single source of truth for the CDN this build points at.
+// `npm run sync:version` rewrites it from package.json, so it can never go stale.
+const TS_TOAST_VERSION = "5.4.0";
+// Point this at your own copy of assets/ to self-host the CSS and icons
+// (useful offline, behind a strict CSP, or when you don't want a CDN dependency):
+//   window.TS_TOAST_ASSET_BASE = '/vendor/toastnotification';
+const TS_TOAST_CDN = (typeof window !== 'undefined' && window.TS_TOAST_ASSET_BASE)
+    ? String(window.TS_TOAST_ASSET_BASE).replace(/\/+$/, '')
+    : `https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@${TS_TOAST_VERSION}`;
 
-// Inject minimal styles for confirm actions and overlay (same as toast.js)
-(function injectInlineStyles() {
-	const STYLE_ID = "ts-toast-inline-extras";
-	if (document.getElementById(STYLE_ID)) return;
-	const style = document.createElement("style");
-	style.id = STYLE_ID;
-	style.textContent = `
+// Load the stylesheet from the CDN, unless the page opted out by importing it itself
+// (set window.TS_TOAST_NO_CSS = true before loading, or ship assets/css/toast.css yourself).
+(function loadStylesheet() {
+    const LINK_ID = 'ts-toast-stylesheet';
+    if (typeof window !== 'undefined' && window.TS_TOAST_NO_CSS) return;
+    if (document.getElementById(LINK_ID)) return;
+    const link = document.createElement("link");
+    link.id = LINK_ID;
+    link.rel = "stylesheet";
+    link.href = `${TS_TOAST_CDN}/assets/css/toast.min.css`;
+    document.head.appendChild(link);
+})();
+
+        // Inject minimal styles for confirm actions and overlay (kept tiny to avoid breaking existing CSS)
+    (function injectInlineStyles() {
+        const STYLE_ID = 'ts-toast-inline-extras';
+        if (document.getElementById(STYLE_ID)) return;
+        const style = document.createElement('style');
+        style.id = STYLE_ID;
+        style.textContent = `
             /* Ensure center positions exist even if external CSS lacks them */
             .ts-toast-container.top-center { top: 1rem; left: 50%; transform: translateX(-50%); align-items: center; }
             .ts-toast-container.bottom-center { bottom: 1rem; left: 50%; transform: translateX(-50%); align-items: center; }
@@ -35,507 +52,541 @@ document.head.appendChild(link);
             .ts-toast.ts-toast-confirm.ts-toast-warning .ts-toast-icon { background: #fef3c7; }
             .ts-toast.ts-toast-confirm.ts-toast-error .ts-toast-icon { background: #fee2e2; }
         `;
-	document.head.appendChild(style);
-})();
+        document.head.appendChild(style);
+    })();
 
-// Full implementation copied from toast.js but exposed as ES module
 const toast = function (message, options = {}) {
-	const {
-		position = "top-right",
-		animation = "slide-right",
-		type = "info",
-		duration = 3000,
-		icon = null,
-		showLoader = false,
-		mode = "alert",
-		title = null,
-		confirmText = "Yes",
-		cancelText = "No",
-		input = false,
-		inputPlaceholder = "",
-		inputValue = "",
-		confirmButtonBg = null,
-		confirmButtonColor = null,
-		cancelButtonBg = null,
-		cancelButtonColor = null,
-		onConfirm = null,
-		onCancel = null,
-		onResult = null,
-		useOverlay = true,
-		closeOnOverlayClick = true,
-		showClose = false,
-		dismissOnClick = true,
-		onClick = null,
-		onShow = null,
-		onDismiss = null,
-	} = options;
+        const {
+            position = 'top-right',
+            animation = 'slide-right', // Default fallback animation
+            type = 'info',
+            duration = 3000,
+            icon = null,
+            showLoader = false,
+            // behavior/mode: 'alert' (default) or 'confirm'/'swal'
+            mode = 'alert',
+            // confirm options (used when mode is 'confirm' or 'swal')
+            title = null,
+            confirmText = 'Yes',
+            cancelText = 'No',
+            // input field options
+            input = false, // 'text', 'email', 'password', 'number', 'textarea', or false
+            inputPlaceholder = '',
+            inputValue = '',
+            // confirm button color customization (optional)
+            confirmButtonBg = null,
+            confirmButtonColor = null,
+            cancelButtonBg = null,
+            cancelButtonColor = null,
+            onConfirm = null,
+            onCancel = null,
+            onResult = null,
+            useOverlay = true,
+            closeOnOverlayClick = true,
+            showClose = false,
+            // interactions
+            dismissOnClick = true, // ignored if confirm-mode
+            onClick = null,      // Custom onClick event listener
+            onShow = null,       // Custom onShow event listener
+            onDismiss = null     // Custom onDismiss event listener
+        } = options;
 
-	const isConfirm = mode === "confirm" || mode === "swal";
+        const isConfirm = (mode === 'confirm' || mode === 'swal');
 
-	const resolvedAnimation =
-		typeof options.animation === "string" && options.animation.trim()
-			? (function mapAnim(a) {
-				const m = {
-					"slide-top": "ts-toast-slide-top",
-					"slide-bottom": "ts-toast-slide-bottom",
-					"slide-left": "ts-toast-slide-left",
-					"slide-right": "ts-toast-slide-right",
-					"zoom-in": "ts-toast-zoom-in",
-					"zoom-out": "ts-toast-zoom-out",
-					flip: "ts-toast-flip",
-				};
-				return m[a] || a;
-			})(options.animation.trim())
-			: isConfirm
-			? "ts-toast-zoom-in"
-			: position.startsWith("top")
-			? "ts-toast-slide-top"
-			: position.startsWith("bottom")
-			? "ts-toast-slide-bottom"
-			: position.endsWith("left")
-			? "ts-toast-slide-left"
-			: "ts-toast-slide-right";
+        // Pick an animation intelligently when one wasn't explicitly provided
+        const resolvedAnimation = (typeof options.animation === 'string' && options.animation.trim())
+            ? (function mapAnim(a){
+                const m = {
+                    'slide-top':'ts-toast-slide-top',
+                    'slide-bottom':'ts-toast-slide-bottom',
+                    'slide-left':'ts-toast-slide-left',
+                    'slide-right':'ts-toast-slide-right',
+                    'zoom-in':'ts-toast-zoom-in',
+                    'zoom-out':'ts-toast-zoom-out',
+                    'flip':'ts-toast-flip'
+                };
+                return m[a] || a;
+            })(options.animation.trim())
+            : (isConfirm ? 'ts-toast-zoom-in' : (position.startsWith('top') ? 'ts-toast-slide-top'
+                : position.startsWith('bottom') ? 'ts-toast-slide-bottom'
+                : position.endsWith('left') ? 'ts-toast-slide-left'
+                : 'ts-toast-slide-right'));
 
-	// helper: remove with smooth CSS transition and cleanup (used by alerts and confirms)
-	const removeWithAnimation = (el, callback) => {
-		const anim = el.dataset && el.dataset.anim ? el.dataset.anim : (el.style.animation || "");
-		let transform = "";
-		if (anim.includes("ts-toast-slide-top")) {
-			// Entered from top, exit upwards
-			transform = "translateY(-100%)";
-		} else if (anim.includes("ts-toast-slide-bottom")) {
-			// Entered from bottom, exit upwards
-			transform = "translateY(100%)";
-		} else if (anim.includes("ts-toast-slide-left")) {
-			// Entered from left, exit to right
-			transform = "translateX(100%)";
-		} else if (anim.includes("ts-toast-slide-right")) {
-			// Entered from right, exit to right
-			transform = "translateX(100%)";
-		}
+        // helper: remove with smooth CSS transition and cleanup (used by alerts)
+        const removeWithAnimation = (el, callback) => {
+            const anim = el.dataset && el.dataset.anim ? el.dataset.anim : (el.style.animation || '');
+            let transform = '';
+            if (anim.includes('ts-toast-slide-top')) {
+                // Entered from top, exit upwards
+                transform = 'translateY(-100%)';
+            } else if (anim.includes('ts-toast-slide-bottom')) {
+                // Entered from bottom, exit upwards
+                transform = 'translateY(100%)';
+            } else if (anim.includes('ts-toast-slide-left')) {
+                // Entered from left, exit to right
+                transform = 'translateX(100%)';
+            } else if (anim.includes('ts-toast-slide-right')) {
+                // Entered from right, exit to right
+                transform = 'translateX(100%)';
+            }
 
-		el.classList.add("ts-toast-slide-out");
-		el.classList.remove("ts-toast-show");
-		el.style.animation = "";
-		if (transform) {
-			el.style.transform = transform;
-		}
-		el.style.opacity = "0";
+            el.classList.add('ts-toast-slide-out');
+            el.classList.remove('ts-toast-show');
+            // Stop any running keyframe animation and drive exit via CSS transition
+            el.style.animation = '';
+            if (transform) {
+                el.style.transform = transform;
+            }
+            el.style.opacity = '0';
 
-		setTimeout(() => {
-			el.classList.remove("ts-toast-slide-out");
-			if (el.parentNode) el.parentNode.removeChild(el);
-			if (typeof callback === "function") callback();
-		}, 500);
-	};
+            setTimeout(() => {
+                el.classList.remove('ts-toast-slide-out');
+                if (el.parentNode) el.parentNode.removeChild(el);
+                if (typeof callback === 'function') callback();
+            }, 500);
+        };
 
-	const toastElement = document.createElement("div");
-	toastElement.className = `ts-toast ts-toast-${type}${isConfirm ? " ts-toast-confirm" : ""}`;
-	toastElement.dataset.anim = resolvedAnimation;
-	toastElement.style.animation = `${resolvedAnimation} 0.5s ease`;
-	if (!isConfirm) {
-		toastElement.style.flexDirection = "row-reverse";
-		toastElement.style.justifyContent = "flex-end";
-	}
+    const toastElement = document.createElement('div');
+        toastElement.className = `ts-toast ts-toast-${type}${isConfirm ? ' ts-toast-confirm' : ''}`;
+    toastElement.dataset.anim = resolvedAnimation;
+    toastElement.style.animation = `${resolvedAnimation} 0.5s ease`;
+        // In confirm mode, we stack content vertically; in alert mode keep original layout
+        if (!isConfirm) {
+            toastElement.style.flexDirection = 'row-reverse';
+            toastElement.style.justifyContent = 'flex-end';
+        }
 
-	const iconElement = document.createElement("span");
-	iconElement.className = "ts-toast-icon";
-	iconElement.style.display = "flex";
-	if (icon) {
-		iconElement.textContent = icon;
-	} else {
-		const img = document.createElement("img");
-		img.src = "";
-		img.style.width = "30px";
-		img.style.height = "30px";
-		img.style.objectFit = "contain";
+        // Create Icon Element
+    const iconElement = document.createElement('span');
+    iconElement.className = 'ts-toast-icon';
+    iconElement.style.display = 'flex';
+        if (icon) {
+            iconElement.textContent = icon;
+        } else {
+            const img = document.createElement('img');
+            img.alt = '';
+            img.setAttribute('aria-hidden', 'true');
+            img.style.width = '30px';
+            img.style.height = '30px';
+            img.style.objectFit = 'contain';
 
-		const baseUrl =
-			"https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/img/";
-		const timestamp = new Date().getTime();
+            // No cache-buster: these GIFs are immutable per version, so let the
+            // browser and the CDN actually cache them.
+            const iconFile = { success: 'success.gif', error: 'error.gif', info: 'info.gif', warning: 'warning.gif' }[type];
+            if (iconFile) img.src = `${TS_TOAST_CDN}/assets/img/${iconFile}`;
 
-		if (type === "success") {
-			img.src = `${baseUrl}success.gif?t=${timestamp}`;
-		} else if (type === "error") {
-			img.src = `${baseUrl}error.gif?t=${timestamp}`;
-		} else if (type === "info") {
-			img.src = `${baseUrl}info.gif?t=${timestamp}`;
-		} else if (type === "warning") {
-			img.src = `${baseUrl}warning.gif?t=${timestamp}`;
-		}
+            iconElement.appendChild(img);
+        }
 
-		iconElement.appendChild(img);
-	}
+        // Create Body
+        const toastBody = document.createElement('div');
+        toastBody.className = 'ts-toast-body';
+        toastBody.innerHTML = message; // Allow HTML content in message
 
-	const toastBody = document.createElement("div");
-	toastBody.className = "ts-toast-body";
-	toastBody.innerHTML = message;
+        // Content row for confirm (icon + text side-by-side)
+        let contentRow = null;
+        if (isConfirm) {
+            contentRow = document.createElement('div');
+            contentRow.className = 'ts-toast-content';
+            contentRow.appendChild(iconElement);
+            if (title) {
+                const titleEl = document.createElement('div');
+                titleEl.className = 'ts-toast-title';
+                titleEl.textContent = title;
+                contentRow.appendChild(titleEl);
+            }
+            contentRow.appendChild(toastBody);
+            toastElement.appendChild(contentRow);
+        } else {
+            toastElement.appendChild(toastBody);
+        }
 
-	let contentRow = null;
-	if (isConfirm) {
-		contentRow = document.createElement("div");
-		contentRow.className = "ts-toast-content";
-		contentRow.appendChild(iconElement);
-		if (title) {
-			const titleEl = document.createElement("div");
-			titleEl.className = "ts-toast-title";
-			titleEl.textContent = title;
-			contentRow.appendChild(titleEl);
-		}
-		contentRow.appendChild(toastBody);
-		toastElement.appendChild(contentRow);
-	} else {
-		toastElement.appendChild(toastBody);
-	}
+        // Input field (for confirm mode with input)
+        let inputElement = null;
+        if (isConfirm && input) {
+            if (input === 'textarea') {
+                inputElement = document.createElement('textarea');
+                inputElement.rows = 3;
+            } else {
+                inputElement = document.createElement('input');
+                inputElement.type = input === 'text' || input === 'email' || input === 'password' || input === 'number' ? input : 'text';
+            }
+            inputElement.className = 'ts-toast-input';
+            inputElement.placeholder = inputPlaceholder;
+            inputElement.value = inputValue;
+            toastElement.appendChild(inputElement);
+        }
 
-	// Input field (for confirm mode with input)
-	let inputElement = null;
-	if (isConfirm && input) {
-		if (input === "textarea") {
-			inputElement = document.createElement("textarea");
-			inputElement.rows = 3;
-		} else {
-			inputElement = document.createElement("input");
-			inputElement.type = input === "text" || input === "email" || input === "password" || input === "number" ? input : "text";
-		}
-		inputElement.className = "ts-toast-input";
-		inputElement.placeholder = inputPlaceholder;
-		inputElement.value = inputValue;
-		toastElement.appendChild(inputElement);
-	}
+        // Actions (for confirm mode)
+        let actionsContainer = null;
+        let resultResolver = null;
+        // Assigned in confirm mode; the overlay and (x) handlers below call it so that
+        // *every* way of dismissing the dialog settles the promise and the callbacks.
+        let resolveAndClose = null;
+        if (isConfirm) {
+            actionsContainer = document.createElement('div');
+            actionsContainer.className = 'ts-toast-actions';
 
-	let actionsContainer = null;
-	let resultResolver = null;
-	if (isConfirm) {
-		actionsContainer = document.createElement("div");
-		actionsContainer.className = "ts-toast-actions";
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'ts-toast-btn cancel';
+            cancelBtn.textContent = cancelText;
 
-		const cancelBtn = document.createElement("button");
-		cancelBtn.className = "ts-toast-btn cancel";
-		cancelBtn.textContent = cancelText;
+            const confirmBtn = document.createElement('button');
+            confirmBtn.className = 'ts-toast-btn confirm';
+            confirmBtn.textContent = confirmText;
 
-		const confirmBtn = document.createElement("button");
-		confirmBtn.className = "ts-toast-btn confirm";
-		confirmBtn.textContent = confirmText;
+            // Apply custom button colors if provided (inline style overrides theme defaults)
+            if (cancelButtonBg) cancelBtn.style.background = cancelButtonBg;
+            if (cancelButtonColor) cancelBtn.style.color = cancelButtonColor;
+            if (confirmButtonBg) confirmBtn.style.background = confirmButtonBg;
+            if (confirmButtonColor) confirmBtn.style.color = confirmButtonColor;
 
-		if (cancelButtonBg) cancelBtn.style.background = cancelButtonBg;
-		if (cancelButtonColor) cancelBtn.style.color = cancelButtonColor;
-		if (confirmButtonBg) confirmBtn.style.background = confirmButtonBg;
-		if (confirmButtonColor) confirmBtn.style.color = confirmButtonColor;
+            actionsContainer.appendChild(cancelBtn);
+            actionsContainer.appendChild(confirmBtn);
+            toastElement.appendChild(actionsContainer);
 
-		actionsContainer.appendChild(cancelBtn);
-		actionsContainer.appendChild(confirmBtn);
-		toastElement.appendChild(actionsContainer);
+            // Create a Promise that resolves on user choice; expose via property
+            toastElement.result = new Promise((resolve) => { resultResolver = resolve; });
 
-		toastElement.result = new Promise((resolve) => {
-			resultResolver = resolve;
-		});
+            let settled = false;
+            resolveAndClose = (confirmed) => {
+                if (settled) return; // a button click and a backdrop click can race
+                settled = true;
+                // With an input, confirming always yields a string (possibly '') and
+                // cancelling yields null, so an empty submission stays distinguishable
+                // from a cancel. Without an input the contract is still true/false.
+                const result = confirmed
+                    ? (inputElement ? inputElement.value : true)
+                    : (inputElement ? null : false);
+                if (resultResolver) resultResolver(result);
+                if (confirmed && typeof onConfirm === 'function') onConfirm(result, toastElement);
+                if (!confirmed && typeof onCancel === 'function') onCancel(toastElement);
+                if (typeof onResult === 'function') onResult(result, toastElement);
+                // Use the same slide+fade removal as alerts
+                removeWithAnimation(toastElement, () => {
+                    if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
+                    // Remove overlay if present
+                    if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                });
+            };
 
-		const resolveAndClose = (value) => {
-			const result = (value && inputElement !== null) ? inputElement.value : value;
-			if (resultResolver) resultResolver(result);
-			if (value && typeof onConfirm === "function") onConfirm((inputElement !== null) ? inputElement.value : value, toastElement);
-			if (!value && typeof onCancel === "function") onCancel(toastElement);
-			if (typeof onResult === "function") onResult(result, toastElement);
-			// Use the same slide+fade removal as alerts
-			removeWithAnimation(toastElement, () => {
-				if (onDismiss && typeof onDismiss === "function") onDismiss(toastElement);
-				if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
-			});
-		};
+            cancelBtn.addEventListener('click', (e) => { e.stopPropagation(); resolveAndClose(false); });
+            confirmBtn.addEventListener('click', (e) => { e.stopPropagation(); resolveAndClose(true); });
+        }
 
-		cancelBtn.addEventListener("click", (e) => {
-			e.stopPropagation();
-			resolveAndClose(false);
-		});
-		confirmBtn.addEventListener("click", (e) => {
-			e.stopPropagation();
-			resolveAndClose(true);
-		});
-	}
+        // Loader Element
+        let loader = null;
+        if (showLoader) {
+            loader = document.createElement('div');
+            loader.className = 'ts-toast-loader';
+            toastElement.appendChild(loader);
+        }
 
-	let loader = null;
-	if (showLoader) {
-		loader = document.createElement("div");
-		loader.className = "ts-toast-loader";
-		toastElement.appendChild(loader);
-	}
+        // Container/Overlay
+        let overlay = null;
+        if (isConfirm && useOverlay) {
+            overlay = document.createElement('div');
+            // A modal centres by default. The `position` default of 'top-right' is meant
+            // for toasts; applying it here parked the dialog in a corner of the backdrop.
+            overlay.className = 'ts-toast-overlay' + (options.position ? ` ${position}` : '');
+            document.body.appendChild(overlay);
+            overlay.appendChild(toastElement);
+            if (showClose) {
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'ts-toast-close';
+                closeBtn.setAttribute('aria-label', 'Close');
+                closeBtn.innerHTML = '&times;';
+                closeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Dismissing via (x) is a cancel, so it has to settle like one.
+                    resolveAndClose(false);
+                });
+                toastElement.appendChild(closeBtn);
+            }
+            if (closeOnOverlayClick) {
+                overlay.addEventListener('click', (e) => {
+                    // Backdrop click is a cancel: settle the promise and onCancel/onResult,
+                    // then close. Previously this resolved only the internal el.result,
+                    // so `await toast.confirm(...)` hung forever.
+                    if (e.target === overlay) resolveAndClose(false);
+                });
+            }
+        } else {
+            // Standard positioned container
+            let container = document.querySelector(`.ts-toast-container.${position}`);
+            if (!container) {
+                container = document.createElement('div');
+                container.className = `ts-toast-container ${position}`;
+                document.body.appendChild(container);
+            }
+            container.appendChild(toastElement);
+        }
 
-	let overlay = null;
-		if (isConfirm && useOverlay) {
-		overlay = document.createElement("div");
-		overlay.className = `ts-toast-overlay ${position}`;
-		document.body.appendChild(overlay);
-		overlay.appendChild(toastElement);
-		if (showClose) {
-			const closeBtn = document.createElement("button");
-			closeBtn.className = "ts-toast-close";
-			closeBtn.setAttribute("aria-label", "Close");
-			closeBtn.innerHTML = "&times;";
-			closeBtn.addEventListener("click", (e) => {
-				e.stopPropagation();
-					removeWithAnimation(toastElement, () => {
-						if (onDismiss && typeof onDismiss === "function") onDismiss(toastElement);
-						if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
-					});
-			});
-			toastElement.appendChild(closeBtn);
-		}
-		if (closeOnOverlayClick) {
-			overlay.addEventListener("click", (e) => {
-				if (e.target === overlay) {
-					if (toastElement.result) {
-						if (typeof resultResolver === "function") {
-							resultResolver(false);
-						}
-					}
-						removeWithAnimation(toastElement, () => {
-							if (onDismiss && typeof onDismiss === "function") onDismiss(toastElement);
-							if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
-						});
-				}
-			});
-		}
-	} else {
-		let container = document.querySelector(`.ts-toast-container.${position}`);
-		if (!container) {
-			container = document.createElement("div");
-			container.className = `ts-toast-container ${position}`;
-			document.body.appendChild(container);
-		}
-		container.appendChild(toastElement);
-	}
+        // Trigger the onShow event if provided
+        if (onShow && typeof onShow === 'function') {
+            onShow(toastElement);
+        }
 
-	if (onShow && typeof onShow === "function") {
-		onShow(toastElement);
-	}
+        // Show Toast with animation
+        setTimeout(() => {
+            toastElement.classList.add('ts-toast-show');
+        }, 100);
 
-	setTimeout(() => {
-		toastElement.classList.add("ts-toast-show");
-	}, 100);
+        // Handle Loader and Icon
+        if (showLoader && loader) {
+            setTimeout(() => {
+                // Skip auto-complete if controlled by toast.loading()
+                if (toastElement._managedByLoading) return;
+                loader.classList.add('done');
+                loader.remove();
+                if (!toastElement.contains(iconElement)) {
+                    if (isConfirm && contentRow) contentRow.appendChild(iconElement);
+                    else toastElement.appendChild(iconElement); // Add icon only if not present
+                }
+            }, 2000); // Simulate a loading period of 2 seconds
+        }
+        if (!showLoader) {
+            // For confirm, icon already added above inside contentRow; avoid moving it
+            if (!isConfirm && !toastElement.contains(iconElement)) {
+                toastElement.appendChild(iconElement);
+            }
+        }
 
-	if (showLoader && loader) {
-		setTimeout(() => {
-			if (toastElement._managedByLoading) return;
-			loader.classList.add("done");
-			loader.remove();
-			if (!toastElement.contains(iconElement)) {
-				if (isConfirm && contentRow) contentRow.appendChild(iconElement);
-				else toastElement.appendChild(iconElement);
-			}
-		}, 2000);
-	}
-	if (!showLoader) {
-		if (!isConfirm && !toastElement.contains(iconElement)) {
-			toastElement.appendChild(iconElement);
-		}
-	}
+        // Auto remove after the duration (skip for confirm mode or when duration <= 0)
+        if (!isConfirm && duration > 0) {
+            const autoRemove = setTimeout(() => {
+                removeWithAnimation(toastElement, () => {
+                    if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
+                });
+            }, duration);
+            toastElement._autoRemove = autoRemove;
+        }
 
-	if (!isConfirm && duration > 0) {
-		const autoRemove = setTimeout(() => {
-			removeWithAnimation(toastElement, () => {
-				if (onDismiss && typeof onDismiss === "function") onDismiss(toastElement);
-			});
-		}, duration);
-		toastElement._autoRemove = autoRemove;
-	}
+        // Add event listener for closing the toast when clicked (disabled in confirm mode)
+        if (!isConfirm && dismissOnClick) {
+            toastElement.addEventListener('click', () => {
+                if (toastElement._autoRemove) clearTimeout(toastElement._autoRemove); // Clear the auto-remove timeout
+                removeWithAnimation(toastElement, () => {
+                    if (onClick && typeof onClick === 'function') onClick(toastElement);
+                    if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
+                });
+            });
+        }
 
-	if (!isConfirm && dismissOnClick) {
-		toastElement.addEventListener("click", () => {
-			if (toastElement._autoRemove) clearTimeout(toastElement._autoRemove);
-			removeWithAnimation(toastElement, () => {
-				if (onClick && typeof onClick === "function") onClick(toastElement);
-				if (onDismiss && typeof onDismiss === "function") onDismiss(toastElement);
-			});
-		});
-	}
+        // Add swipe event listeners for mobile dismissal
+        if (!isConfirm) {
+            let touchStartX = 0;
+            let touchEndX = 0;
 
-	if (!isConfirm) {
-		let touchStartX = 0;
-		let touchEndX = 0;
+            toastElement.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            });
 
-		toastElement.addEventListener("touchstart", (e) => {
-			touchStartX = e.changedTouches[0].screenX;
-		});
+            toastElement.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                if (Math.abs(touchStartX - touchEndX) > 50) { // Swipe distance threshold
+                    if (toastElement._autoRemove) clearTimeout(toastElement._autoRemove);
+                    removeWithAnimation(toastElement, () => {
+                        if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
+                    });
+                }
+            });
+        }
 
-		toastElement.addEventListener("touchend", (e) => {
-			touchEndX = e.changedTouches[0].screenX;
-			if (Math.abs(touchStartX - touchEndX) > 50) {
-				if (toastElement._autoRemove) clearTimeout(toastElement._autoRemove);
-				removeWithAnimation(toastElement, () => {
-					if (onDismiss && typeof onDismiss === "function") onDismiss(toastElement);
-				});
-			}
-		});
-	}
+        return toastElement;
+    };
 
-	return toastElement;
-};
+    // Shorthands return the toast element so it can be passed to toast.update().
+    toast.success = function (message, options) {
+        return toast(message, { ...options, type: 'success' });
+    };
 
-toast.success = function (message, options) {
-	toast(message, { ...options, type: "success" });
-};
+    toast.error = function (message, options) {
+        return toast(message, { ...options, type: 'error' });
+    };
 
-toast.error = function (message, options) {
-	toast(message, { ...options, type: "error" });
-};
+    toast.warning = function (message, options) {
+        return toast(message, { ...options, type: 'warning' });
+    };
 
-toast.update = function (toastElement, message, options = {}) {
-	const {
-		type = null,
-		icon = null,
-		showLoader = false,
-		duration = 3000,
-		position = "top-right",
-		onClick = null,
-		onShow = null,
-		onDismiss = null,
-	} = options;
+    toast.info = function (message, options) {
+        return toast(message, { ...options, type: 'info' });
+    };
 
-	const oldLoader = toastElement.querySelector(".ts-toast-loader");
-	const oldIcon = toastElement.querySelector(".ts-toast-icon");
-	if (oldLoader) oldLoader.remove();
+    // Update toast function to handle removal with animation
+    toast.update = function (toastElement, message, options = {}) {
+        const {
+            type = null,
+            icon = null,
+            showLoader = false,
+            duration = 3000, // Default duration (in ms)
+            onClick = null,      // Custom onClick event listener
+            onShow = null,       // Custom onShow event listener
+            onDismiss = null     // Custom onDismiss event listener
+        } = options;
 
-	if (type) {
-		toastElement.className = `ts-toast ts-toast-${type} show ${position}`;
-	}
-	const toastBody = toastElement.querySelector(".ts-toast-body");
-	if (toastBody) {
-		toastBody.innerHTML = message;
-	}
+        // Remove old loader (if any)
+        const oldLoader = toastElement.querySelector('.ts-toast-loader');
+        const oldIcon = toastElement.querySelector('.ts-toast-icon');
+        if (oldLoader) oldLoader.remove();
 
-	if (oldIcon) {
-		oldIcon.remove();
-	}
+        // Update toast class and message. Swap only the type modifier: overwriting
+        // className dropped ts-toast-show (so the toast faded out), dropped
+        // ts-toast-confirm (so confirm dialogs lost their layout), and leaked the
+        // position onto the toast instead of the container.
+        if (type) {
+            ['success', 'error', 'info', 'warning'].forEach((t) => toastElement.classList.remove(`ts-toast-${t}`));
+            toastElement.classList.add('ts-toast', `ts-toast-${type}`, 'ts-toast-show');
+        }
+        const toastBody = toastElement.querySelector('.ts-toast-body');
+        if (toastBody) {
+            toastBody.innerHTML = message;
+        }
 
-	const iconElement = document.createElement("span");
-	iconElement.className = "ts-toast-icon";
-	iconElement.style.display = "flex";
+        // Handle Icon update only if it's new or hasn't been set yet
+        if (oldIcon) {
+            oldIcon.remove(); // Remove the old icon first
+        }
 
-	if (icon) {
-		iconElement.textContent = icon;
-	} else {
-		const img = document.createElement("img");
-		img.style.width = "30px";
-		img.style.height = "30px";
-		img.style.objectFit = "contain";
+    const iconElement = document.createElement('span');
+    iconElement.className = 'ts-toast-icon';
+    iconElement.style.display = 'flex';
 
-		if (type === "success") {
-			img.src =
-				"https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/img/success.gif";
-		} else if (type === "error") {
-			img.src =
-				"https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/img/error.gif";
-		} else if (type === "info") {
-			img.src =
-				"https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/img/info.gif";
-		} else if (type === "warning") {
-			img.src =
-				"https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.2.0/assets/img/warning.gif";
-		}
+        if (icon) {
+            iconElement.textContent = icon;
+        } else {
+            const img = document.createElement('img');
+            img.alt = '';
+            img.setAttribute('aria-hidden', 'true');
+            img.style.width = '30px';
+            img.style.height = '30px';
+            img.style.objectFit = 'contain';
 
-		iconElement.appendChild(img);
-	}
+            const iconFile = { success: 'success.gif', error: 'error.gif', info: 'info.gif', warning: 'warning.gif' }[type];
+            if (iconFile) img.src = `${TS_TOAST_CDN}/assets/img/${iconFile}`;
 
-	toastElement.appendChild(iconElement);
+            iconElement.appendChild(img);
+        }
 
-	if (showLoader) {
-		const loader = document.createElement("div");
-		loader.className = "ts-toast-loader";
-		toastElement.appendChild(loader);
-		setTimeout(() => {
-			loader.classList.add("done");
-		}, 2000);
-	}
+        // Append the new icon immediately (inside the content row for confirm dialogs)
+        const contentRow = toastElement.querySelector('.ts-toast-content');
+        (contentRow || toastElement).appendChild(iconElement);
 
-	if (toastElement._autoRemove) {
-		clearTimeout(toastElement._autoRemove);
-	}
+        // Handle loader if requested
+        if (showLoader) {
+            const loader = document.createElement('div');
+            loader.className = 'ts-toast-loader';
+            toastElement.appendChild(loader);
+            setTimeout(() => {
+                loader.classList.add('done');
+            }, 2000);  // Simulate loader completion after 2 seconds
+        }
 
-	const autoRemove = setTimeout(() => {
-		const removeWithAnimation = (el, cb) => {
-			el.classList.add("ts-toast-slide-out");
-			el.classList.remove("ts-toast-show");
-			el.style.animation = "";
-			setTimeout(() => {
-				el.classList.remove("ts-toast-slide-out");
-				if (el.parentNode) el.parentNode.removeChild(el);
-				if (typeof cb === "function") cb();
-			}, 500);
-		};
+        // Clear previous auto-remove timer if needed
+        if (toastElement._autoRemove) {
+            clearTimeout(toastElement._autoRemove);
+        }
 
-		removeWithAnimation(toastElement, () => {
-			if (onDismiss && typeof onDismiss === "function") onDismiss(toastElement);
-		});
-	}, duration);
+        // Set the auto-remove timer again to ensure toast disappears after the duration
+        const autoRemove = setTimeout(() => {
+            const removeWithAnimation = (el, cb) => {
+                el.classList.add('ts-toast-slide-out');
+                el.classList.remove('ts-toast-show');
+                el.style.animation = '';
+                setTimeout(() => {
+                    el.classList.remove('ts-toast-slide-out');
+                    if (el.parentNode) el.parentNode.removeChild(el);
+                    if (typeof cb === 'function') cb();
+                }, 500);
+            };
 
-	toastElement._autoRemove = autoRemove;
-};
+            removeWithAnimation(toastElement, () => {
+                if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
+            });
+        }, duration);
 
-toast.loading = function (message, options = {}) {
-	const toastElement = toast(message, {
-		...options,
-		type: options.type || "info",
-		duration: 0,
-		showLoader: true,
-		icon: null,
-	});
+        toastElement._autoRemove = autoRemove; // Re-set the auto-remove timer
+    };
 
-	requestAnimationFrame(() => {
-		toastElement.classList.add("ts-toast-show");
-	});
+    toast.loading = function (message, options = {}) {
+        const toastElement = toast(message, {
+            ...options,
+            type: options.type || 'info', // Default type is 'info'
+            duration: 0, // Sticky until manually updated/closed
+            showLoader: true, // Always show loader during loading
+            icon: null
+        });
 
-	const loader = toastElement.querySelector(".ts-toast-loader");
-	let iconElement = toastElement.querySelector(".ts-toast-icon");
+        // Force reflow and add animation after DOM insert
+        requestAnimationFrame(() => {
+            toastElement.classList.add('ts-toast-show');
+        });
 
-	if (!iconElement) {
-		iconElement = document.createElement("span");
-		iconElement.className = "ts-toast-icon";
-		iconElement.style.display = "flex";
-		toastElement.appendChild(iconElement);
-	}
+        const loader = toastElement.querySelector('.ts-toast-loader');
+        let iconElement = toastElement.querySelector('.ts-toast-icon');
 
-	toastElement._managedByLoading = true;
+        // Ensure the iconElement is created and appended if it doesn't exist
+        if (!iconElement) {
+            iconElement = document.createElement('span');
+            iconElement.className = 'ts-toast-icon';
+            iconElement.style.display = 'flex';
+            toastElement.appendChild(iconElement);
+        }
 
-	if (loader) {
-		setTimeout(() => {
-			if (!toastElement._managedByLoading) loader.classList.add("done");
-		}, 2000);
-	}
+        // mark as managed by loading flow to avoid internal auto-complete
+        toastElement._managedByLoading = true;
 
-	return {
-		update: (newMessage, newOptions = {}) => {
-			toastElement._managedByLoading = false;
-			toast.update(toastElement, newMessage, {
-				...newOptions,
-				showLoader: false,
-			});
-		},
-		close: () => {
-			if (toastElement._autoRemove) clearTimeout(toastElement._autoRemove);
-			toastElement.classList.add("ts-toast-slide-out");
-			toastElement.classList.remove("ts-toast-show");
-			toastElement.style.animation = "";
-			setTimeout(() => {
-				toastElement.classList.remove("ts-toast-slide-out");
-				if (toastElement.parentNode) toastElement.parentNode.removeChild(toastElement);
-			}, 500);
-		},
-	};
-};
+        // Ensure loader is handled properly
+        if (loader) {
+            setTimeout(() => {
+                // Keep spinning until update() decides otherwise
+                if (!toastElement._managedByLoading) loader.classList.add('done');
+            }, 2000); // Simulate a loading period of 2 seconds
+        }
 
-toast.confirm = function (message, options = {}) {
-	return new Promise((resolve) => {
-		const el = toast(message, {
-			...options,
-			mode: "confirm",
-			duration: 0,
-			dismissOnClick: false,
-			onResult: (val) => resolve(val),
-		});
-		void el;
-	});
-};
+        return {
+            update: (newMessage, newOptions = {}) => {
+                // Let update manage completion: stop managing/finish loader
+                toastElement._managedByLoading = false;
+                toast.update(toastElement, newMessage, {
+                    ...newOptions,
+                    showLoader: false // Disable loader when updating the message
+                });
+            },
+            close: () => {
+                if (toastElement._autoRemove) clearTimeout(toastElement._autoRemove);
+                toastElement.classList.add('ts-toast-slide-out');
+                toastElement.classList.remove('ts-toast-show');
+                toastElement.style.animation = '';
+                setTimeout(() => {
+                    toastElement.classList.remove('ts-toast-slide-out');
+                    if (toastElement.parentNode) toastElement.parentNode.removeChild(toastElement);
+                }, 500);
+            }
+        };
+    };
+
+    // Convenience API: swal-like confirm dialog
+    // Usage: toast.confirm('Are you sure?', { type: 'warning', confirmText: 'Yes', cancelText: 'No' }).then(ok => {...})
+    toast.confirm = function (message, options = {}) {
+        return new Promise((resolve) => {
+            const el = toast(message, {
+                ...options,
+                mode: 'confirm',
+                duration: 0, // prevent auto-dismiss
+                dismissOnClick: false,
+                onResult: (val) => resolve(val)
+            });
+            // If consumer needs the element, it is returned by toast() but we ignore here.
+            // They can still call toast(...) with mode: 'confirm' to get the element and read el.result
+            void el; // no-op
+        });
+    };
+
+// Expose globally for CDN / browser usage
+if (typeof window !== 'undefined') {
+    window.toast = toast;
+}
 
 // ES module export
 export default toast;

@@ -1,10 +1,27 @@
 "use strict";
 
-// Dynamically load the external CSS file
-const link = document.createElement("link");
-link.rel = "stylesheet";
-link.href = "https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/css/toast.min.css";
-document.head.appendChild(link);
+// Single source of truth for the CDN this build points at.
+// `npm run sync:version` rewrites it from package.json, so it can never go stale.
+const TS_TOAST_VERSION = "5.4.0";
+// Point this at your own copy of assets/ to self-host the CSS and icons
+// (useful offline, behind a strict CSP, or when you don't want a CDN dependency):
+//   window.TS_TOAST_ASSET_BASE = '/vendor/toastnotification';
+const TS_TOAST_CDN = (typeof window !== 'undefined' && window.TS_TOAST_ASSET_BASE)
+    ? String(window.TS_TOAST_ASSET_BASE).replace(/\/+$/, '')
+    : `https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@${TS_TOAST_VERSION}`;
+
+// Load the stylesheet from the CDN, unless the page opted out by importing it itself
+// (set window.TS_TOAST_NO_CSS = true before loading, or ship assets/css/toast.css yourself).
+(function loadStylesheet() {
+    const LINK_ID = 'ts-toast-stylesheet';
+    if (typeof window !== 'undefined' && window.TS_TOAST_NO_CSS) return;
+    if (document.getElementById(LINK_ID)) return;
+    const link = document.createElement("link");
+    link.id = LINK_ID;
+    link.rel = "stylesheet";
+    link.href = `${TS_TOAST_CDN}/assets/css/toast.min.css`;
+    document.head.appendChild(link);
+})();
 
         // Inject minimal styles for confirm actions and overlay (kept tiny to avoid breaking existing CSS)
     (function injectInlineStyles() {
@@ -147,23 +164,16 @@ const toast = function (message, options = {}) {
             iconElement.textContent = icon;
         } else {
             const img = document.createElement('img');
-            img.src = '';
+            img.alt = '';
+            img.setAttribute('aria-hidden', 'true');
             img.style.width = '30px';
             img.style.height = '30px';
             img.style.objectFit = 'contain';
 
-            const baseUrl = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/img/';
-            const timestamp = new Date().getTime(); // 🔄 force refresh
-
-            if (type === 'success') {
-                img.src = `${baseUrl}success.gif?t=${timestamp}`;
-            } else if (type === 'error') {
-                img.src = `${baseUrl}error.gif?t=${timestamp}`;
-            } else if (type === 'info') {
-                img.src = `${baseUrl}info.gif?t=${timestamp}`;
-            } else if (type === 'warning') {
-                img.src = `${baseUrl}warning.gif?t=${timestamp}`;
-            }
+            // No cache-buster: these GIFs are immutable per version, so let the
+            // browser and the CDN actually cache them.
+            const iconFile = { success: 'success.gif', error: 'error.gif', info: 'info.gif', warning: 'warning.gif' }[type];
+            if (iconFile) img.src = `${TS_TOAST_CDN}/assets/img/${iconFile}`;
 
             iconElement.appendChild(img);
         }
@@ -210,6 +220,9 @@ const toast = function (message, options = {}) {
         // Actions (for confirm mode)
         let actionsContainer = null;
         let resultResolver = null;
+        // Assigned in confirm mode; the overlay and (x) handlers below call it so that
+        // *every* way of dismissing the dialog settles the promise and the callbacks.
+        let resolveAndClose = null;
         if (isConfirm) {
             actionsContainer = document.createElement('div');
             actionsContainer.className = 'ts-toast-actions';
@@ -235,11 +248,19 @@ const toast = function (message, options = {}) {
             // Create a Promise that resolves on user choice; expose via property
             toastElement.result = new Promise((resolve) => { resultResolver = resolve; });
 
-            const resolveAndClose = (value) => {
-                const result = (value && inputElement !== null) ? inputElement.value : value;
+            let settled = false;
+            resolveAndClose = (confirmed) => {
+                if (settled) return; // a button click and a backdrop click can race
+                settled = true;
+                // With an input, confirming always yields a string (possibly '') and
+                // cancelling yields null, so an empty submission stays distinguishable
+                // from a cancel. Without an input the contract is still true/false.
+                const result = confirmed
+                    ? (inputElement ? inputElement.value : true)
+                    : (inputElement ? null : false);
                 if (resultResolver) resultResolver(result);
-                if (value && typeof onConfirm === 'function') onConfirm((inputElement !== null) ? inputElement.value : value, toastElement);
-                if (!value && typeof onCancel === 'function') onCancel(toastElement);
+                if (confirmed && typeof onConfirm === 'function') onConfirm(result, toastElement);
+                if (!confirmed && typeof onCancel === 'function') onCancel(toastElement);
                 if (typeof onResult === 'function') onResult(result, toastElement);
                 // Use the same slide+fade removal as alerts
                 removeWithAnimation(toastElement, () => {
@@ -265,7 +286,9 @@ const toast = function (message, options = {}) {
         let overlay = null;
         if (isConfirm && useOverlay) {
             overlay = document.createElement('div');
-            overlay.className = `ts-toast-overlay ${position}`;
+            // A modal centres by default. The `position` default of 'top-right' is meant
+            // for toasts; applying it here parked the dialog in a corner of the backdrop.
+            overlay.className = 'ts-toast-overlay' + (options.position ? ` ${position}` : '');
             document.body.appendChild(overlay);
             overlay.appendChild(toastElement);
             if (showClose) {
@@ -275,28 +298,17 @@ const toast = function (message, options = {}) {
                 closeBtn.innerHTML = '&times;';
                 closeBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    removeWithAnimation(toastElement, () => {
-                        if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
-                        if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
-                    });
+                    // Dismissing via (x) is a cancel, so it has to settle like one.
+                    resolveAndClose(false);
                 });
                 toastElement.appendChild(closeBtn);
             }
             if (closeOnOverlayClick) {
                 overlay.addEventListener('click', (e) => {
-                    if (e.target === overlay) {
-                        // Overlay background click -> cancel
-                        if (toastElement.result) {
-                            // let the confirm logic close and cleanup
-                            if (typeof resultResolver === 'function') {
-                                resultResolver(false);
-                            }
-                        }
-                        removeWithAnimation(toastElement, () => {
-                            if (onDismiss && typeof onDismiss === 'function') onDismiss(toastElement);
-                            if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
-                        });
-                    }
+                    // Backdrop click is a cancel: settle the promise and onCancel/onResult,
+                    // then close. Previously this resolved only the internal el.result,
+                    // so `await toast.confirm(...)` hung forever.
+                    if (e.target === overlay) resolveAndClose(false);
                 });
             }
         } else {
@@ -384,12 +396,21 @@ const toast = function (message, options = {}) {
         return toastElement;
     };
 
+    // Shorthands return the toast element so it can be passed to toast.update().
     toast.success = function (message, options) {
-        toast(message, { ...options, type: 'success' });
+        return toast(message, { ...options, type: 'success' });
     };
 
     toast.error = function (message, options) {
-        toast(message, { ...options, type: 'error' });
+        return toast(message, { ...options, type: 'error' });
+    };
+
+    toast.warning = function (message, options) {
+        return toast(message, { ...options, type: 'warning' });
+    };
+
+    toast.info = function (message, options) {
+        return toast(message, { ...options, type: 'info' });
     };
 
     // Update toast function to handle removal with animation
@@ -399,7 +420,6 @@ const toast = function (message, options = {}) {
             icon = null,
             showLoader = false,
             duration = 3000, // Default duration (in ms)
-            position = 'top-right', // Default position,
             onClick = null,      // Custom onClick event listener
             onShow = null,       // Custom onShow event listener
             onDismiss = null     // Custom onDismiss event listener
@@ -410,10 +430,13 @@ const toast = function (message, options = {}) {
         const oldIcon = toastElement.querySelector('.ts-toast-icon');
         if (oldLoader) oldLoader.remove();
 
-        // Update toast class and message
+        // Update toast class and message. Swap only the type modifier: overwriting
+        // className dropped ts-toast-show (so the toast faded out), dropped
+        // ts-toast-confirm (so confirm dialogs lost their layout), and leaked the
+        // position onto the toast instead of the container.
         if (type) {
-            // keep ts- prefix consistent
-            toastElement.className = `ts-toast ts-toast-${type} show ${position}`;
+            ['success', 'error', 'info', 'warning'].forEach((t) => toastElement.classList.remove(`ts-toast-${t}`));
+            toastElement.classList.add('ts-toast', `ts-toast-${type}`, 'ts-toast-show');
         }
         const toastBody = toastElement.querySelector('.ts-toast-body');
         if (toastBody) {
@@ -433,25 +456,21 @@ const toast = function (message, options = {}) {
             iconElement.textContent = icon;
         } else {
             const img = document.createElement('img');
+            img.alt = '';
+            img.setAttribute('aria-hidden', 'true');
             img.style.width = '30px';
             img.style.height = '30px';
             img.style.objectFit = 'contain';
 
-            if (type === 'success') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/img/success.gif';
-            } else if (type === 'error') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/img/error.gif';
-            } else if (type === 'info') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/img/info.gif';
-            } else if (type === 'warning') {
-                img.src = 'https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@5.3.0/assets/img/warning.gif';
-            }
+            const iconFile = { success: 'success.gif', error: 'error.gif', info: 'info.gif', warning: 'warning.gif' }[type];
+            if (iconFile) img.src = `${TS_TOAST_CDN}/assets/img/${iconFile}`;
 
             iconElement.appendChild(img);
         }
 
-        // Append the new icon immediately
-        toastElement.appendChild(iconElement);
+        // Append the new icon immediately (inside the content row for confirm dialogs)
+        const contentRow = toastElement.querySelector('.ts-toast-content');
+        (contentRow || toastElement).appendChild(iconElement);
 
         // Handle loader if requested
         if (showLoader) {
@@ -569,7 +588,9 @@ if (typeof window !== 'undefined') {
     window.toast = toast;
 }
 
+/* build:cjs-start (stripped when generating toast.module.js) */
 // CommonJS export for Node/bundlers (safe no-op in browsers)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = toast;
 }
+/* build:cjs-end */

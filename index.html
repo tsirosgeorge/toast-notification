@@ -1,265 +1,587 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script type="module">
-        import {toast} from './toast.module.js';
-        window.toast = toast;
-    </script>
-    <title>Toast Notification Test</title>
-    <style>
-        :root { color-scheme: light dark; }
-        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; line-height: 1.4; }
-        h1 { font-size: 20px; margin: 0 0 12px; }
-        .panel { display: grid; grid-template-columns: repeat(2, minmax(280px, 1fr)); gap: 16px; align-items: end; }
-        .field { display: grid; gap: 6px; }
-        label { font-size: 12px; opacity: 0.8; }
-        input[type="text"], input[type="number"], select, textarea { padding: 8px; border-radius: 8px; border: 1px solid #d1d5db; background: transparent; color: inherit; }
-        textarea { min-height: 64px; }
-        .row { display: flex; gap: 8px; flex-wrap: wrap; }
-        button { padding: 8px 12px; border: 0; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        .primary { background: #3b82f6; color: #fff; }
-        .warn { background: #ef4444; color: #fff; }
-        .muted { background: #e5e7eb; color: #1f2937; }
-        .log { margin-top: 16px; padding: 8px; border-radius: 8px; background: rgba(148,163,184,0.15); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
-        @media (max-width: 720px) { .panel { grid-template-columns: 1fr; } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toast Notification — a tiny toast & confirm library</title>
+<meta name="description" content="Playground for @tsirosgeorge/toastnotification: toasts, confirm dialogs and prompts in a few lines of JavaScript.">
+
+<!-- Serve the library's CSS and icons from this folder so the demo runs offline. -->
+<script>window.TS_TOAST_ASSET_BASE = '.';</script>
+
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #fbfbfd;
+  --panel: #ffffff;
+  --panel-2: #f4f5f7;
+  --text: #16181d;
+  --muted: #646b7a;
+  --line: #e4e6eb;
+  --accent: #2f6df6;
+  --accent-soft: #e8f0ff;
+  --code-bg: #0f1218;
+  --code-text: #d8dee9;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(16,24,40,.04), 0 8px 24px -12px rgba(16,24,40,.16);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d0f13;
+    --panel: #15181e;
+    --panel-2: #1b1f26;
+    --text: #e9ecf1;
+    --muted: #949cab;
+    --line: #262b34;
+    --accent: #5b8dff;
+    --accent-soft: #1a2437;
+    --code-bg: #090b0f;
+    --code-text: #d8dee9;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+a { color: var(--accent); }
+
+/* ---------- header ---------- */
+header {
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.bar { display: flex; align-items: center; gap: 12px; height: 60px; }
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 650; letter-spacing: -.01em; }
+.mark {
+  width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+  background: var(--accent); color: #fff; font-size: 14px;
+}
+.tag {
+  font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 5px 7px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent);
+}
+.bar nav { margin-left: auto; display: flex; gap: 18px; font-size: 14px; }
+.bar nav a { color: var(--muted); text-decoration: none; }
+.bar nav a:hover { color: var(--text); }
+
+/* ---------- hero ---------- */
+.hero { padding: 68px 0 44px; max-width: 680px; }
+.hero h1 {
+  font-size: clamp(30px, 5.2vw, 46px); line-height: 1.12;
+  letter-spacing: -.028em; margin: 0 0 16px; font-weight: 680;
+}
+.hero p { font-size: 17px; color: var(--muted); margin: 0 0 28px; }
+
+.install { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+@media (max-width: 760px) { .install { grid-template-columns: 1fr; } }
+.snippet {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 10px 10px 14px;
+  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow: hidden;
+}
+.snippet code { flex: 1; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+.snippet code::-webkit-scrollbar { display: none; }
+
+/* ---------- shared bits ---------- */
+.copy {
+  flex: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted);
+  border-radius: 7px; padding: 5px 9px; cursor: pointer;
+  font: 600 11px/1 ui-sans-serif, system-ui, sans-serif;
+}
+.copy:hover { color: var(--text); border-color: var(--muted); }
+.copy.done { color: #12894f; border-color: #12894f; }
+
+section { padding: 40px 0; border-top: 1px solid var(--line); }
+.head { margin-bottom: 20px; }
+.head h2 { font-size: 20px; letter-spacing: -.02em; margin: 0 0 5px; font-weight: 650; }
+.head p { margin: 0; color: var(--muted); font-size: 14px; }
+
+/* ---------- quick demos ---------- */
+.chips { display: flex; flex-wrap: wrap; gap: 9px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--text);
+  border-radius: 999px; padding: 9px 16px; cursor: pointer;
+  font: 500 14px/1 inherit; transition: border-color .15s, transform .08s;
+}
+.chip:hover { border-color: var(--muted); }
+.chip:active { transform: translateY(1px); }
+.chip .dot { width: 7px; height: 7px; border-radius: 999px; background: var(--muted); }
+.chip[data-tone="success"] .dot { background: #17a35c; }
+.chip[data-tone="error"]   .dot { background: #e5484d; }
+.chip[data-tone="warning"] .dot { background: #f0a020; }
+.chip[data-tone="info"]    .dot { background: #2f6df6; }
+
+/* ---------- playground ---------- */
+.play { display: grid; grid-template-columns: 1fr 420px; gap: 24px; align-items: start; }
+@media (max-width: 940px) { .play { grid-template-columns: 1fr; } }
+
+.tabs { display: inline-flex; gap: 3px; padding: 3px; background: var(--panel-2); border-radius: 10px; margin-bottom: 18px; }
+.tabs button {
+  border: 0; background: transparent; color: var(--muted); cursor: pointer;
+  padding: 7px 15px; border-radius: 8px; font: 500 14px/1 inherit;
+}
+.tabs button[aria-selected="true"] { background: var(--panel); color: var(--text); box-shadow: var(--shadow); }
+
+fieldset { border: 0; margin: 0 0 22px; padding: 0; }
+legend {
+  padding: 0; margin-bottom: 12px;
+  font: 600 11px/1 inherit; letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+}
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+.field { display: grid; gap: 5px; min-width: 0; }
+.field label { font-size: 13px; color: var(--muted); }
+.field .hint { font-size: 12px; color: var(--muted); opacity: .8; }
+input, select, textarea {
+  font: inherit; font-size: 14px; color: var(--text);
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 9px; padding: 8px 10px; width: 100%;
+}
+textarea { min-height: 74px; resize: vertical; }
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  outline-offset: 1px; border-color: var(--accent);
+}
+.switch { display: flex; align-items: center; gap: 9px; font-size: 14px; cursor: pointer; }
+.switch input { width: auto; accent-color: var(--accent); }
+
+/* ---------- output column ---------- */
+.sticky { position: sticky; top: 80px; display: grid; gap: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.card > h3 {
+  margin: 0; padding: 12px 15px; border-bottom: 1px solid var(--line);
+  font: 600 12px/1 inherit; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+  display: flex; align-items: center; gap: 10px;
+}
+.card > h3 .copy { margin-left: auto; }
+pre {
+  margin: 0; padding: 15px; background: var(--code-bg); color: var(--code-text);
+  font: 13px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow-x: auto;
+}
+.tok-key { color: #93b8ff; }
+.tok-str { color: #a3d98a; }
+.tok-num { color: #f2c97d; }
+.tok-fn  { color: #e7cdff; }
+.tok-comment { color: #7c8698; font-style: italic; }
+
+.run {
+  width: 100%; border: 0; border-radius: 10px; cursor: pointer;
+  background: var(--accent); color: #fff; padding: 12px;
+  font: 600 15px/1 inherit; transition: filter .15s;
+}
+.run:hover { filter: brightness(1.08); }
+
+#log { margin: 0; padding: 6px; max-height: 190px; overflow-y: auto; list-style: none; }
+#log li {
+  display: flex; gap: 10px; padding: 6px 9px; border-radius: 7px;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+#log li + li { border-top: 1px solid var(--line); }
+#log time { color: var(--muted); flex: none; }
+#log .empty { color: var(--muted); font-style: italic; font-family: inherit; }
+
+footer { border-top: 1px solid var(--line); padding: 26px 0 44px; color: var(--muted); font-size: 13px; }
+[hidden] { display: none !important; }
+</style>
 </head>
 <body>
-    <h1>Toast Notification Playground</h1>
 
-    <div class="panel">
-        <div class="field">
-            <label>Message (supports HTML)</label>
-            <textarea id="msg">This is a message</textarea>
+<header>
+  <div class="wrap bar">
+    <span class="brand"><span class="mark">🍞</span> toastnotification</span>
+    <span class="tag" id="version">v5.4.0</span>
+    <nav>
+      <a href="https://github.com/tsirosgeorge/toast-notification">GitHub</a>
+      <a href="https://www.npmjs.com/package/@tsirosgeorge/toastnotification">npm</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="hero">
+    <h1>Toasts and confirm dialogs, in one line.</h1>
+    <p>A dependency-free notification library: stacked toasts, modal confirms, prompts with an input, and loading states that resolve in place. Everything below is live — click anything.</p>
+    <div class="install">
+      <div class="snippet">
+        <code>npm i @tsirosgeorge/toastnotification</code>
+        <button class="copy" data-copy="npm i @tsirosgeorge/toastnotification">Copy</button>
+      </div>
+      <div class="snippet">
+        <code id="cdn-snippet"></code>
+        <button class="copy" data-copy-from="cdn-snippet">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <div class="head">
+      <h2>One click, one line</h2>
+      <p>The shortest thing you can write with each part of the API.</p>
+    </div>
+    <div class="chips" id="quick">
+      <button class="chip" data-tone="success" data-demo="success"><span class="dot"></span>toast.success()</button>
+      <button class="chip" data-tone="error"   data-demo="error"><span class="dot"></span>toast.error()</button>
+      <button class="chip" data-tone="warning" data-demo="warning"><span class="dot"></span>toast.warning()</button>
+      <button class="chip" data-tone="info"    data-demo="info"><span class="dot"></span>toast.info()</button>
+      <button class="chip" data-demo="confirm"><span class="dot"></span>toast.confirm()</button>
+      <button class="chip" data-demo="prompt"><span class="dot"></span>confirm with input</button>
+      <button class="chip" data-demo="loading"><span class="dot"></span>toast.loading()</button>
+      <button class="chip" data-demo="stack"><span class="dot"></span>stack a few</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2>Playground</h2>
+      <p>Change anything — the code on the right is exactly what you'd write.</p>
+    </div>
+
+    <div class="play">
+      <form id="controls" onsubmit="return false">
+        <div class="tabs" role="tablist">
+          <button type="button" role="tab" id="tab-toast" aria-selected="true">Toast</button>
+          <button type="button" role="tab" id="tab-confirm" aria-selected="false">Confirm dialog</button>
         </div>
-        <div class="field">
-            <label>Type</label>
-            <select id="type">
+
+        <fieldset>
+          <legend>Content</legend>
+          <div class="grid">
+            <div class="field" style="grid-column: 1 / -1;">
+              <label for="msg">Message</label>
+              <textarea id="msg">Your changes have been saved.</textarea>
+              <span class="hint">HTML is rendered as-is — escape it if it comes from a user.</span>
+            </div>
+            <div class="field">
+              <label for="type">Type</label>
+              <select id="type">
                 <option value="info">info</option>
-                <option value="success">success</option>
+                <option value="success" selected>success</option>
                 <option value="warning">warning</option>
                 <option value="error">error</option>
-            </select>
+              </select>
+            </div>
+            <div class="field">
+              <label for="icon">Custom icon</label>
+              <input id="icon" type="text" placeholder="e.g. 🎉 — blank uses the built-in">
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Appearance</legend>
+          <div class="grid">
+            <div class="field">
+              <label for="position">Position</label>
+              <select id="position">
+                <option>top-right</option><option>top-left</option><option>top-center</option>
+                <option>bottom-right</option><option>bottom-left</option><option>bottom-center</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="animation">Animation</label>
+              <select id="animation">
+                <option>slide-right</option><option>slide-left</option><option>slide-top</option>
+                <option>slide-bottom</option><option>zoom-in</option><option>zoom-out</option><option>flip</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset data-mode="toast">
+          <legend>Behaviour</legend>
+          <div class="grid">
+            <div class="field">
+              <label for="duration">Duration (ms)</label>
+              <input id="duration" type="number" value="3000" min="0" step="500">
+              <span class="hint">0 keeps it on screen.</span>
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <label class="switch"><input type="checkbox" id="dismissOnClick" checked> Dismiss on click</label>
+              <label class="switch"><input type="checkbox" id="showLoader"> Show loader</label>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset data-mode="confirm" hidden>
+          <legend>Dialog</legend>
+          <div class="grid">
+            <div class="field">
+              <label for="title">Title</label>
+              <input id="title" type="text" value="Delete this file?">
+            </div>
+            <div class="field">
+              <label for="confirmText">Confirm button</label>
+              <input id="confirmText" type="text" value="Delete">
+            </div>
+            <div class="field">
+              <label for="cancelText">Cancel button</label>
+              <input id="cancelText" type="text" value="Keep it">
+            </div>
+            <div class="field">
+              <label for="confirmBg">Confirm button colour</label>
+              <input id="confirmBg" type="text" placeholder="#e5484d">
+            </div>
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>&nbsp;</label>
+              <label class="switch"><input type="checkbox" id="useOverlay" checked> Dim the page behind it</label>
+              <label class="switch"><input type="checkbox" id="overlayClose" checked> Clicking the backdrop cancels</label>
+              <label class="switch"><input type="checkbox" id="showClose"> Show a (×) button</label>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset data-mode="confirm" hidden>
+          <legend>Input</legend>
+          <div class="grid">
+            <div class="field">
+              <label for="inputType">Field type</label>
+              <select id="inputType">
+                <option value="">None</option>
+                <option value="text">text</option>
+                <option value="email">email</option>
+                <option value="password">password</option>
+                <option value="number">number</option>
+                <option value="textarea">textarea</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="inputPlaceholder">Placeholder</label>
+              <input id="inputPlaceholder" type="text" placeholder="Type the file name…">
+            </div>
+            <div class="field">
+              <label for="inputValue">Default value</label>
+              <input id="inputValue" type="text">
+            </div>
+          </div>
+        </fieldset>
+      </form>
+
+      <div class="sticky">
+        <div class="card">
+          <h3>Your code <button class="copy" data-copy-from="code">Copy</button></h3>
+          <pre><code id="code"></code></pre>
         </div>
-        <div class="field">
-            <label>Position</label>
-            <select id="position">
-                <option value="top-right">top-right</option>
-                <option value="top-left">top-left</option>
-                <option value="top-center">top-center</option>
-                <option value="bottom-right">bottom-right</option>
-                <option value="bottom-left">bottom-left</option>
-                <option value="bottom-center">bottom-center</option>
-            </select>
+        <button class="run" id="run">Run it ↵</button>
+        <div class="card">
+          <h3>Events</h3>
+          <ul id="log"><li class="empty">Callbacks will show up here.</li></ul>
         </div>
-        <div class="field">
-            <label>Animation</label>
-            <select id="animation">
-                <option value="slide-right">slide-right</option>
-                <option value="slide-left">slide-left</option>
-                <option value="slide-top">slide-top</option>
-                <option value="slide-bottom">slide-bottom</option>
-                <option value="zoom-in">zoom-in</option>
-            </select>
-        </div>
-        <div class="field">
-            <label>Duration (ms) – set 0 for sticky</label>
-            <input id="duration" type="number" value="3000" min="0" step="100" />
-        </div>
-        <div class="field">
-            <label>Custom Icon (emoji/text, optional)</label>
-            <input id="icon" type="text" placeholder="e.g. ✅" />
-        </div>
-        <div class="field">
-            <label>Show Loader</label>
-            <select id="loader">
-                <option value="false" selected>false</option>
-                <option value="true">true</option>
-            </select>
-        </div>
-        <div class="field">
-            <label>Dismiss on Click (alert only)</label>
-            <select id="dismissOnClick">
-                <option value="true" selected>true</option>
-                <option value="false">false</option>
-            </select>
-        </div>
-        <div class="field">
-            <label>Confirm Button Text</label>
-            <input id="confirmText" type="text" value="Yes" />
-        </div>
-        <div class="field">
-            <label>Cancel Button Text</label>
-            <input id="cancelText" type="text" value="No" />
-        </div>
-        <div class="field">
-            <label>Title (confirm)</label>
-            <input id="title" type="text" value="Are you sure?" />
-        </div>
-        <div class="field">
-            <label>Overlay (confirm)</label>
-            <select id="overlay">
-                <option value="true" selected>true</option>
-                <option value="false">false</option>
-            </select>
-        </div>
-        <div class="field">
-            <label>Close on Overlay Click (confirm)</label>
-            <select id="overlayClose">
-                <option value="true" selected>true</option>
-                <option value="false">false</option>
-            </select>
-        </div>
-        <div class="field">
-            <label>Show Close (×) (confirm)</label>
-            <select id="showClose">
-                <option value="false" selected>false</option>
-                <option value="true">true</option>
-            </select>
-        </div>
-        <div class="field">
-            <label>Confirm Button BG (optional)</label>
-            <input id="confirmBg" type="text" placeholder="#10b981" />
-        </div>
-        <div class="field">
-            <label>Confirm Button Text Color (optional)</label>
-            <input id="confirmColor" type="text" placeholder="#ffffff" />
-        </div>
-        <div class="field">
-            <label>Cancel Button BG (optional)</label>
-            <input id="cancelBg" type="text" placeholder="#e5e7eb" />
-        </div>
-        <div class="field">
-            <label>Cancel Button Text Color (optional)</label>
-            <input id="cancelColor" type="text" placeholder="#1f2937" />
-        </div>
-        <div class="field">
-            <label>Input Type (confirm)</label>
-            <select id="inputType">
-                <option value="false">No Input</option>
-                <option value="text">Text</option>
-                <option value="email">Email</option>
-                <option value="password">Password</option>
-                <option value="number">Number</option>
-                <option value="textarea">Textarea</option>
-            </select>
-        </div>
-        <div class="field">
-            <label>Input Placeholder (confirm)</label>
-            <input id="inputPlaceholder" type="text" placeholder="Enter value..." />
-        </div>
-        <div class="field">
-            <label>Input Default Value (confirm)</label>
-            <input id="inputValue" type="text" placeholder="" />
-        </div>
+      </div>
     </div>
+  </section>
+</main>
 
-    <div class="row" style="margin-top:16px;">
-        <button id="btn-alert" class="primary">Show Alert</button>
-        <button id="btn-confirm-promise" class="warn">Show Confirm (Promise)</button>
-        <button id="btn-confirm-callbacks" class="warn">Show Confirm (Callbacks)</button>
-        <button id="btn-loading" class="muted">Show Loading then Update</button>
-    </div>
+<footer class="wrap">
+  Built by <a href="https://github.com/tsirosgeorge">George Tsiros</a> · see the
+  <a href="https://github.com/tsirosgeorge/toast-notification#readme">README</a> for the full options table.
+</footer>
 
-    <div class="log" id="log">Log:</div>
+<script type="module">
+import { toast } from './toast.module.js';
+window.toast = toast;
 
-    <script>
+const $ = (id) => document.getElementById(id);
+const VERSION = $('version').textContent.replace(/^v/, '');
+$('cdn-snippet').textContent =
+  `<script src="https://cdn.jsdelivr.net/npm/@tsirosgeorge/toastnotification@${VERSION}/toast.min.js"><\/script>`;
 
-    
+/* ---------------- event log ---------------- */
+const logEl = $('log');
+function log(text) {
+  const empty = logEl.querySelector('.empty');
+  if (empty) empty.remove();
+  const li = document.createElement('li');
+  const t = document.createElement('time');
+  t.textContent = new Date().toLocaleTimeString();
+  li.append(t, document.createTextNode(text));
+  logEl.prepend(li);
+  while (logEl.children.length > 30) logEl.lastElementChild.remove();
+}
 
-        const $ = (id) => document.getElementById(id);
-        const log = (msg) => {
-            const el = $("log");
-            el.textContent = `Log: ${msg}`;
-        };
+/* ---------------- quick demos ---------------- */
+const demos = {
+  success: () => toast.success('Your changes have been saved.'),
+  error:   () => toast.error('Could not reach the server.'),
+  warning: () => toast.warning('Your session expires in 2 minutes.'),
+  info:    () => toast.info('A new version is available.'),
+  confirm: async () => {
+    const ok = await toast.confirm('This cannot be undone.', {
+      type: 'error', title: 'Delete this file?', confirmText: 'Delete', cancelText: 'Keep it'
+    });
+    log(`confirm → ${ok}`);
+  },
+  prompt: async () => {
+    const name = await toast.confirm('What should we call you?', {
+      type: 'info', title: 'One more thing', input: 'text',
+      inputPlaceholder: 'Ada Lovelace', confirmText: 'Save'
+    });
+    log(name === null ? 'prompt → cancelled (null)' : `prompt → ${JSON.stringify(name)}`);
+  },
+  loading: () => {
+    const t = toast.loading('Uploading your file…');
+    setTimeout(() => t.update('Upload complete.', { type: 'success', duration: 2500 }), 2200);
+  },
+  stack: () => {
+    ['info', 'success', 'warning', 'error'].forEach((type, i) =>
+      setTimeout(() => toast(`This is a ${type} toast.`, { type, duration: 4000 }), i * 220));
+  }
+};
+$('quick').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-demo]');
+  if (btn) demos[btn.dataset.demo]();
+});
 
-        function getCommonOptions() {
-            const duration = parseInt($("duration").value, 10) || 0;
-            const iconVal = $("icon").value.trim();
-            return {
-                type: $("type").value,
-                position: $("position").value,
-                animation: $("animation").value,
-                duration,
-                icon: iconVal ? iconVal : null,
-                showLoader: $("loader").value === 'true',
-                dismissOnClick: $("dismissOnClick").value === 'true',
-            };
-        }
+/* ---------------- playground ---------------- */
+let mode = 'toast';
+const tabs = { toast: $('tab-toast'), confirm: $('tab-confirm') };
 
-        $("btn-alert").addEventListener('click', () => {
-            const options = getCommonOptions();
-            toast($("msg").value, {
-                ...options,
-                onShow: () => log('Alert shown'),
-                onDismiss: () => log('Alert dismissed'),
-                onClick: () => log('Alert clicked')
-            });
-        });
+function setMode(next) {
+  mode = next;
+  for (const [key, btn] of Object.entries(tabs)) btn.setAttribute('aria-selected', String(key === next));
+  document.querySelectorAll('[data-mode]').forEach((el) => { el.hidden = el.dataset.mode !== next; });
+  render();
+}
+tabs.toast.addEventListener('click', () => setMode('toast'));
+tabs.confirm.addEventListener('click', () => setMode('confirm'));
 
-        $('btn-confirm-promise').addEventListener('click', async () => {
-            const options = getCommonOptions();
-            const inputType = $("inputType").value;
-            const result = await toast.confirm($("msg").value, {
-                ...options,
-                type: $("type").value || 'warning',
-                confirmText: $("confirmText").value,
-                cancelText: $("cancelText").value,
-                title: $("title").value,
-                input: inputType === 'false' ? false : inputType,
-                inputPlaceholder: $("inputPlaceholder").value,
-                inputValue: $("inputValue").value,
-                useOverlay: $("overlay").value === 'true',
-                closeOnOverlayClick: $("overlayClose").value === 'true',
-                showClose: $("showClose").value === 'true',
-                confirmButtonBg: $("confirmBg").value.trim() || null,
-                confirmButtonColor: $("confirmColor").value.trim() || null,
-                cancelButtonBg: $("cancelBg").value.trim() || null,
-                cancelButtonColor: $("cancelColor").value.trim() || null,
-            });
-            log(`Confirm (promise) result: ${JSON.stringify(result)}`);
-        });
+const val = (id) => $(id).value.trim();
+const on  = (id) => $(id).checked;
 
-        $("btn-confirm-callbacks").addEventListener('click', () => {
-            const options = getCommonOptions();
-            const inputType = $("inputType").value;
-            toast($("msg").value, {
-                ...options,
-                mode: 'confirm',
-                confirmText: $("confirmText").value,
-                cancelText: $("cancelText").value,
-                title: $("title").value,
-                input: inputType === 'false' ? false : inputType,
-                inputPlaceholder: $("inputPlaceholder").value,
-                inputValue: $("inputValue").value,
-                useOverlay: $("overlay").value === 'true',
-                closeOnOverlayClick: $("overlayClose").value === 'true',
-                showClose: $("showClose").value === 'true',
-                confirmButtonBg: $("confirmBg").value.trim() || null,
-                confirmButtonColor: $("confirmColor").value.trim() || null,
-                cancelButtonBg: $("cancelBg").value.trim() || null,
-                cancelButtonColor: $("cancelColor").value.trim() || null,
-                onConfirm: (value) => log(`Confirm (callbacks): YES - Value: ${value}`),
-                onCancel: () => log('Confirm (callbacks): NO'),
-                onDismiss: () => log('Confirm dismissed')
-            });
-        });
+// Only options that differ from the library's defaults end up in the snippet,
+// so the code you copy is the code you'd actually write.
+function buildOptions() {
+  const o = {};
+  const put = (k, v, def) => { if (v !== def && v !== '') o[k] = v; };
 
-        $("btn-loading").addEventListener('click', () => {
-            const options = getCommonOptions();
-            const loaderToast = toast.loading('Loading, please wait…', {
-                ...options,
-                type: $("type").value || 'info',
-                duration: 5000,
-            });
-            // Simulate async completion then update
-            setTimeout(() => {
-                loaderToast.update('Done! Updated to success', { type: 'success', duration: 2500 });
-                log('Loading finished → success shown');
-            }, 2000);
-        });
-    </script>
+  put('type', val('type'), 'info');
+  put('position', val('position'), 'top-right');
+  put('animation', val('animation'), 'slide-right');
+  if (val('icon')) o.icon = val('icon');
+
+  if (mode === 'toast') {
+    const d = Number($('duration').value);
+    if (Number.isFinite(d) && d !== 3000) o.duration = d;
+    if (!on('dismissOnClick')) o.dismissOnClick = false;
+    if (on('showLoader')) o.showLoader = true;
+  } else {
+    if (val('title')) o.title = val('title');
+    put('confirmText', val('confirmText'), 'Yes');
+    put('cancelText', val('cancelText'), 'No');
+    if (val('confirmBg')) o.confirmButtonBg = val('confirmBg');
+    if (val('inputType')) {
+      o.input = val('inputType');
+      if (val('inputPlaceholder')) o.inputPlaceholder = val('inputPlaceholder');
+      if (val('inputValue')) o.inputValue = val('inputValue');
+    }
+    if (!on('useOverlay')) o.useOverlay = false;
+    if (!on('overlayClose')) o.closeOnOverlayClick = false;
+    if (on('showClose')) o.showClose = true;
+  }
+  return o;
+}
+
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function highlight(options) {
+  const message = JSON.stringify($('msg').value);
+  const entries = Object.entries(options);
+  const body = entries.length
+    ? '{\n' + entries.map(([k, v]) =>
+        `  <span class="tok-key">${k}</span>: ` +
+        (typeof v === 'string' ? `<span class="tok-str">${esc(JSON.stringify(v))}</span>`
+                               : `<span class="tok-num">${v}</span>`)
+      ).join(',\n') + '\n}'
+    : '';
+
+  const arg = `<span class="tok-str">${esc(message)}</span>${body ? ', ' + body : ''}`;
+
+  if (mode === 'toast') return `<span class="tok-fn">toast</span>(${arg})`;
+
+  const hasInput = Boolean(options.input);
+  const name = hasInput ? 'value' : 'confirmed';
+  const check = hasInput
+    ? `<span class="tok-key">if</span> (${name} !== <span class="tok-num">null</span>) {\n  <span class="tok-comment">// confirmed — ${name} is the text they typed</span>\n}`
+    : `<span class="tok-key">if</span> (${name}) {\n  <span class="tok-comment">// they said yes</span>\n}`;
+
+  return `<span class="tok-key">const</span> ${name} = <span class="tok-key">await</span> <span class="tok-fn">toast.confirm</span>(${arg});\n\n${check}`;
+}
+
+function plainCode(options) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = highlight(options);
+  return tmp.textContent;
+}
+
+let current = {};
+function render() {
+  current = buildOptions();
+  $('code').innerHTML = highlight(current);
+}
+$('controls').addEventListener('input', render);
+$('controls').addEventListener('change', render);
+
+/* ---------------- run ---------------- */
+$('run').addEventListener('click', async () => {
+  const message = $('msg').value;
+  const options = buildOptions();
+
+  if (mode === 'toast') {
+    toast(message, {
+      ...options,
+      onShow: () => log('onShow'),
+      onClick: () => log('onClick'),
+      onDismiss: () => log('onDismiss')
+    });
+    return;
+  }
+
+  const result = await toast.confirm(message, { ...options, onDismiss: () => log('onDismiss') });
+  if (options.input) {
+    log(result === null ? 'cancelled → null' : `confirmed → ${JSON.stringify(result)}`);
+  } else {
+    log(`resolved → ${result}`);
+  }
+});
+
+/* ---------------- copy buttons ---------------- */
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.copy');
+  if (!btn) return;
+  const text = btn.dataset.copy
+    ?? (btn.dataset.copyFrom === 'code' ? plainCode(current) : $(btn.dataset.copyFrom).textContent);
+  try {
+    await navigator.clipboard.writeText(text);
+    const label = btn.textContent;
+    btn.textContent = 'Copied';
+    btn.classList.add('done');
+    setTimeout(() => { btn.textContent = label; btn.classList.remove('done'); }, 1400);
+  } catch {
+    toast.error('Your browser blocked clipboard access.');
+  }
+});
+
+/* Enter anywhere in the form runs the current config. */
+$('controls').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); $('run').click(); }
+});
+
+render();
+</script>
 </body>
 </html>
