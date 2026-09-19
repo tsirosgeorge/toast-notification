@@ -15,7 +15,9 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "test": "tsc --noEmit --strict --skipLibCheck toast.d.ts",
+    "test:types": "tsc --noEmit --strict --skipLibCheck toast.d.ts",
+    "test:e2e": "playwright test",
+    "test": "npm run test:types && npm run test:e2e",
     "sync:version": "node scripts/sync-version.mjs",
     "build:module": "node scripts/build-module.mjs",
     "build:css": "cleancss -o assets/css/toast.min.css assets/css/toast.css",
@@ -32,8 +34,6 @@
     "toast.d.ts",
     "assets/css/toast.css",
     "assets/css/toast.min.css",
-    "assets/img/",
-    "!assets/img/old/",
     "LICENSE",
     "Readme.md"
   ],
@@ -57,7 +57,9 @@
   },
   "homepage": "https://github.com/tsirosgeorge/toast-notification#readme",
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "clean-css-cli": "^5.6.3",
+    "http-server": "^14.1.1",
     "terser": "^5.40.0",
     "typescript": "^5.9.3"
   },

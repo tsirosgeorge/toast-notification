@@ -1,3 +1,4 @@
 node_modules/
 assets/css/toast.min.css
-toast.min.js
+toast.min.jstest-results/
+playwright-report/

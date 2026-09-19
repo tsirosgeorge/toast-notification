@@ -213,14 +213,6 @@
     font-size: 1.2rem;
 }
 
-.ts-toast-container .ts-toast-success .ts-toast-icon {
-    color: var(--toast-success-color, #66ee78);
-}
-
-.ts-toast-container .ts-toast-error .ts-toast-icon {
-    color: var(--toast-error-color, #ef4444);
-}
-
 /* Existing toast styles... */
 
 /* Loader styles */
@@ -254,18 +246,6 @@
     opacity: 0;
     /* Fade out the loader */
     transition: opacity 0.5s ease;
-}
-
-.ts-toast-container .ts-toast-icon {
-    font-size: 1.2rem;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-}
-
-/* Show the icon after the loader has completed */
-.ts-toast-container .ts-toast.ts-toast-show .ts-toast-icon {
-    opacity: 1;
-    /* Fade in the icon */
 }
 
 @keyframes progress-bar {
@@ -348,12 +328,8 @@
 
 /* Tiny utility: flex icon container */
 /* Scoped utility to avoid conflicts */
-.ts-toast-d-flex { display: inline-flex; align-items: center; }
 
 /* Prevent scroll behind confirm overlay */
-body.ts-toast-no-scroll {
-    overflow: hidden;
-}
 
 /* Progress bar counting down the remaining time */
 @keyframes ts-toast-progress {
@@ -400,3 +376,54 @@ body.ts-toast-no-scroll {
 .ts-toast-container .ts-toast-action:hover {
     background: var(--toast-action-hover, rgba(59, 130, 246, 0.12));
 }
+
+/* ---- Icons ---- */
+/* Inline SVG, drawn on once when the toast appears. The glyph is a stroked path, so
+   animating stroke-dashoffset draws it; the dots fade and pop in alongside. */
+.ts-toast-icon svg {
+    width: 30px;
+    height: 30px;
+    display: block;
+    overflow: visible;
+}
+
+.ts-toast-icon .ts-toast-ring { fill: currentColor; }
+
+.ts-toast-icon .ts-toast-glyph {
+    fill: none;
+    stroke: var(--toast-glyph-color, #fff);
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: var(--ts-len);
+    animation: ts-toast-draw 420ms ease-out 1 both;
+}
+
+.ts-toast-icon .ts-toast-dot {
+    fill: var(--toast-glyph-color, #fff);
+    transform-origin: center;
+    animation: ts-toast-pop 420ms ease-out 1 both;
+}
+
+@keyframes ts-toast-draw {
+    from { stroke-dashoffset: var(--ts-len); }
+    to   { stroke-dashoffset: 0; }
+}
+
+@keyframes ts-toast-pop {
+    from { opacity: 0; transform: scale(0.3); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* Someone who asked for less motion gets the finished icon, not a drawing of it. */
+@media (prefers-reduced-motion: reduce) {
+    .ts-toast-icon .ts-toast-glyph,
+    .ts-toast-icon .ts-toast-dot { animation: none; }
+    .ts-toast-icon .ts-toast-glyph { stroke-dashoffset: 0; }
+}
+
+/* Icon colours, matching the palette of the GIFs these replaced. */
+.ts-toast-success .ts-toast-icon { color: var(--toast-success-color, #86e08a); }
+.ts-toast-error   .ts-toast-icon { color: var(--toast-error-color, #e8635e); }
+.ts-toast-info    .ts-toast-icon { color: var(--toast-info-color, #6fc8ef); }
+.ts-toast-warning .ts-toast-icon { color: var(--toast-warning-color, #f7e07a); }

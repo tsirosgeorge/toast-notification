@@ -42,6 +42,9 @@ jobs:
             exit 1
           fi
 
+      # Playwright drives a real browser; jsdom would pass while a toast was invisible.
+      - run: npx playwright install --with-deps chromium
+
       - run: npm test
 
       # Catch a forgotten rebuild: the committed artifacts must match the source.

@@ -1,5 +1,27 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- **Breaking:** `message` is rendered as text. It previously went through `innerHTML`, so
+  any message assembled from user input — a database field, a form value, an API error —
+  could run JavaScript on the page. `<script>` tags never ran, but `<img src=x onerror>`
+  did, which is the usual way this is exploited. Pass `allowHtml: true` on the calls where
+  you deliberately wrote markup.
+- **Breaking:** icons are inline SVG instead of animated GIFs. The four GIFs were 323 kB —
+  fifteen times the library itself — were 400x400 for a 30px slot, and each cost a network
+  round trip before the icon could appear. The glyph is now stroked on once as the toast
+  appears, respects `prefers-reduced-motion`, and stays sharp at any size. `assets/img/` is
+  no longer published; the published package went from 531 kB to 135 kB.
+
+### Added
+- A Playwright suite covering every bug fixed since 5.3.3, run in a real browser and wired
+  into the release workflow. Until now each fix was verified by hand once and nothing
+  stopped it regressing.
+
+### Removed
+- The unused PNG icons, and the dead `ts-toast-d-flex` and `ts-toast-no-scroll` CSS rules.
+
 ## [5.6.1] - 2026-09-19
 
 ### Fixed

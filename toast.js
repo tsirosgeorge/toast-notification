@@ -28,6 +28,28 @@ const tsToastFocusable = (root) => Array.from(
 
 let tsToastIdCounter = 0;
 
+// Icons are inline SVG rather than animated GIFs. The four GIFs were 323 kB — fifteen
+// times the whole library — were 400x400 for a 30px slot, and each one cost a network
+// round trip before the icon could appear. The glyph is stroked so CSS can draw it on,
+// once, when the toast appears.
+const TS_TOAST_GLYPHS = {
+    success: '<path class="ts-toast-glyph" style="--ts-len:26" d="M7 12.6 L10.4 16 L17 8.8"/>',
+    error: '<path class="ts-toast-glyph" style="--ts-len:23" d="M8.3 8.3 L15.7 15.7 M15.7 8.3 L8.3 15.7"/>',
+    info: '<circle class="ts-toast-dot" cx="12" cy="7.4" r="1.5"/><path class="ts-toast-glyph" style="--ts-len:7" d="M12 11 L12 17"/>',
+    warning: '<path class="ts-toast-glyph" style="--ts-len:8" d="M12 6.6 L12 14"/><circle class="ts-toast-dot" cx="12" cy="17.3" r="1.5"/>'
+};
+
+// Fills the icon span for a type. Returns false when the type has no icon.
+const tsToastPaintIcon = (el, type) => {
+    const glyph = TS_TOAST_GLYPHS[type];
+    if (!glyph) return false;
+    // Fixed internal markup, never caller input.
+    el.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+        '<circle class="ts-toast-ring" cx="12" cy="12" r="12"/>' + glyph + '</svg>';
+    return true;
+};
+
 // Load the stylesheet from the CDN, unless the page opted out by importing it itself
 // (set window.TS_TOAST_NO_CSS = true before loading, or ship assets/css/toast.css yourself).
 (function loadStylesheet() {
@@ -71,7 +93,7 @@ let tsToastIdCounter = 0;
             .ts-toast.ts-toast-confirm .ts-toast-close { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 999px; border: 0; background: transparent; color: #6b7280; font-size: 20px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
             .ts-toast.ts-toast-confirm .ts-toast-close:hover { background: rgba(0,0,0,0.06); }
             .ts-toast.ts-toast-confirm .ts-toast-icon { width: 64px; height: 64px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; }
-            .ts-toast.ts-toast-confirm .ts-toast-icon img { width: 36px; height: 36px; }
+            .ts-toast.ts-toast-confirm .ts-toast-icon svg { width: 36px; height: 36px; }
             .ts-toast.ts-toast-confirm.ts-toast-success .ts-toast-icon { background: #dcfce7; }
             .ts-toast.ts-toast-confirm.ts-toast-info .ts-toast-icon { background: #dbeafe; }
             .ts-toast.ts-toast-confirm.ts-toast-warning .ts-toast-icon { background: #fef3c7; }
@@ -120,9 +142,9 @@ const toast = function (message, options = {}) {
             action = null,
             // Escape cancels a confirm dialog
             closeOnEscape = true,
-            // `message` is written as HTML for backwards compatibility. Pass false to
-            // render it as plain text, which is what you want for anything user-supplied.
-            allowHtml = true,
+            // `message` is rendered as plain text. Pass true only for markup you wrote
+            // yourself: any string built from user input becomes executable HTML.
+            allowHtml = false,
             // interactions
             dismissOnClick = true, // ignored if confirm-mode
             onClick = null,      // Custom onClick event listener
@@ -216,27 +238,15 @@ const toast = function (message, options = {}) {
         if (icon) {
             iconElement.textContent = icon;
         } else {
-            const img = document.createElement('img');
-            img.alt = '';
-            img.setAttribute('aria-hidden', 'true');
-            img.style.width = '30px';
-            img.style.height = '30px';
-            img.style.objectFit = 'contain';
-
-            // No cache-buster: these GIFs are immutable per version, so let the
-            // browser and the CDN actually cache them.
-            const iconFile = { success: 'success.gif', error: 'error.gif', info: 'info.gif', warning: 'warning.gif' }[type];
-            if (iconFile) img.src = `${TS_TOAST_CDN}/assets/img/${iconFile}`;
-
-            iconElement.appendChild(img);
+            tsToastPaintIcon(iconElement, type);
         }
 
         // Create Body
         const toastBody = document.createElement('div');
         toastBody.className = 'ts-toast-body';
         toastBody.id = `${uid}-body`;
-        // HTML by default for backwards compatibility; pass allowHtml: false for
-        // anything that came from a user.
+        // Text by default. innerHTML runs event handlers such as <img onerror>, so a
+        // message assembled from user input was a scripting hole in every caller.
         if (allowHtml) toastBody.innerHTML = message;
         else toastBody.textContent = message;
 
@@ -668,7 +678,7 @@ const toast = function (message, options = {}) {
             icon = null,
             showLoader = false,
             duration = 3000, // Default duration (in ms); 0 keeps the toast on screen
-            allowHtml = true,
+            allowHtml = false,
             onDismiss = null     // Replaces the callback the toast was created with
         } = options;
 
@@ -700,25 +710,16 @@ const toast = function (message, options = {}) {
     iconElement.className = 'ts-toast-icon';
     iconElement.style.display = 'flex';
 
+        let hasIcon = Boolean(icon);
         if (icon) {
             iconElement.textContent = icon;
         } else {
-            const img = document.createElement('img');
-            img.alt = '';
-            img.setAttribute('aria-hidden', 'true');
-            img.style.width = '30px';
-            img.style.height = '30px';
-            img.style.objectFit = 'contain';
-
-            const iconFile = { success: 'success.gif', error: 'error.gif', info: 'info.gif', warning: 'warning.gif' }[type];
-            if (iconFile) img.src = `${TS_TOAST_CDN}/assets/img/${iconFile}`;
-
-            iconElement.appendChild(img);
+            hasIcon = tsToastPaintIcon(iconElement, type);
         }
 
         // Only attach an icon we actually have. Without a type and without an explicit
-        // icon this used to append an empty <span><img></span>.
-        if (icon || iconElement.querySelector('img[src]')) {
+        // icon this used to append an empty icon element.
+        if (hasIcon) {
             const contentRow = toastElement.querySelector('.ts-toast-content');
             (contentRow || toastElement).appendChild(iconElement);
         }

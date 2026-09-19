@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>toast test fixture</title>
+  <!-- Serve the stylesheet from this checkout instead of the CDN, so the tests
+       exercise the code in the repo rather than the last published release. -->
+  <script>window.TS_TOAST_NO_CSS = true;</script>
+  <link rel="stylesheet" href="/assets/css/toast.css">
+  <script src="/toast.min.js"></script>
+</head>
+<body style="min-height: 300vh; margin: 0; font: 14px system-ui;">
+  <button id="trigger">Open</button>
+  <script>
+    // Records what the library handed back, so assertions can read it.
+    window.log = [];
+    window.lastResult = undefined;
+    document.getElementById('trigger').addEventListener('click', () => {
+      window.lastPromise = toast.confirm('Sure?', { title: 'Confirm', input: 'text' });
+    });
+  </script>
+</body>
+</html>

@@ -38,8 +38,9 @@ export interface ToastOptions {
   /** Renders a button inside the toast, e.g. Undo. */
   action?: ToastAction | null;
   /**
-   * `message` is written as HTML by default, for backwards compatibility.
-   * Pass `false` to render it as plain text — do that for anything user-supplied.
+   * `message` is rendered as plain text. Pass `true` only for markup you wrote
+   * yourself — a string built from user input becomes executable HTML.
+   * @default false
    */
   allowHtml?: boolean;
   /** `'confirm'` (alias `'swal'`) renders a modal dialog instead of a toast. */

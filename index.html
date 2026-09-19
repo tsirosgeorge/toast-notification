@@ -6,14 +6,10 @@
 <title>Toast Notification — a tiny toast & confirm library</title>
 <meta name="description" content="Playground for @tsirosgeorge/toastnotification: toasts, confirm dialogs and prompts in a few lines of JavaScript.">
 
-<!-- Serve the library's icons from this folder so the demo runs offline and always
-     shows the code in this repo rather than the last published release. -->
-<script>
-  window.TS_TOAST_ASSET_BASE = '.';
-  // toast.min.css is a build artefact and is gitignored, so it does not exist on
-  // GitHub Pages. Load the unminified stylesheet that is committed instead.
-  window.TS_TOAST_NO_CSS = true;
-</script>
+<!-- Icons are inline SVG now, so nothing is fetched at runtime. toast.min.css is a
+     gitignored build artefact and does not exist on GitHub Pages, so the demo loads
+     the committed stylesheet itself. -->
+<script>window.TS_TOAST_NO_CSS = true;</script>
 <link rel="stylesheet" href="assets/css/toast.css">
 
 <style>
@@ -274,7 +270,7 @@ footer { border-top: 1px solid var(--line); padding: 26px 0 44px; color: var(--m
             <div class="field" style="grid-column: 1 / -1;">
               <label for="msg">Message</label>
               <textarea id="msg">Your changes have been saved.</textarea>
-              <span class="hint">HTML is rendered as-is — escape it if it comes from a user.</span>
+              <span class="hint">Rendered as text. Tick <em>Allow HTML</em> only for markup you wrote yourself.</span>
             </div>
             <div class="field">
               <label for="type">Type</label>
@@ -331,6 +327,7 @@ footer { border-top: 1px solid var(--line); padding: 26px 0 44px; color: var(--m
               <label class="switch"><input type="checkbox" id="pauseOnHover" checked> Pause the countdown on hover</label>
               <label class="switch"><input type="checkbox" id="showProgress"> Show a progress bar</label>
               <label class="switch"><input type="checkbox" id="showLoader"> Show loader</label>
+              <label class="switch"><input type="checkbox" id="allowHtml"> Allow HTML in the message</label>
             </div>
           </div>
         </fieldset>
@@ -514,6 +511,7 @@ function buildOptions() {
     if (!on('pauseOnHover')) o.pauseOnHover = false;
     if (on('showProgress')) o.showProgress = true;
     if (on('showLoader')) o.showLoader = true;
+    if (on('allowHtml')) o.allowHtml = true;
     if (val('actionText')) o.action = { text: val('actionText') };
   } else {
     if (val('title')) o.title = val('title');

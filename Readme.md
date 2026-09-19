@@ -159,6 +159,25 @@ const t = toast.loading('Uploading…', { type: 'info' });
 t.update('Done!', { type: 'success', duration: 2000 });
 ```
 
+## ⬆️ Upgrading to 6.0.0
+
+**`message` is now rendered as text, not HTML.** Before 6.0.0 it went through `innerHTML`,
+so a message assembled from a database field, a form value or an API response could run
+JavaScript on your page — `<img src=x onerror="…">` is enough, and `<script>` tags are not
+required. That default is now off.
+
+If you deliberately put markup in a message, add `allowHtml: true` to those calls:
+
+```javascript
+toast('Saved <b>invoice.pdf</b>', { allowHtml: true });   // markup you wrote
+toast(serverResponse.error);                              // untrusted — leave it as text
+```
+
+**Icons are inline SVG.** The four animated GIFs (323 kB, and a network request per toast)
+are gone; the glyph is now drawn on once as the toast appears. The package went from
+531 kB to 135 kB, icons appear instantly, and the library no longer fetches images at all.
+`assets/img/` is no longer published.
+
 ## 🛠️ Available Options
 
 | Option       | Type       | Default       | Description                                                                                   |
@@ -172,7 +191,7 @@ t.update('Done!', { type: 'success', duration: 2000 });
 | `pauseOnHover` | `boolean` | `true`      | Freeze the countdown while the pointer or keyboard focus is on the toast.                      |
 | `showProgress` | `boolean` | `false`     | Thin bar counting the remaining time down. Needs `duration > 0`; pauses with `pauseOnHover`.   |
 | `action`     | `object` or `null` | `null` | `{ text, onClick }` renders a button inside the toast, e.g. Undo. Clicking it runs `onClick` and closes the toast. |
-| `allowHtml`  | `boolean`  | `true`        | `message` is written as HTML. Pass `false` to render it as plain text — do that for anything user-supplied, or you have an XSS hole. |
+| `allowHtml`  | `boolean`  | `false`       | Render `message` as HTML instead of text. Turn it on only for markup you wrote yourself: a string built from user input becomes executable HTML. |
 | `closeOnEscape` | `boolean` | `true`      | Confirm dialogs only. Escape cancels the dialog.                                              |
 | `onClick`    | `function` or `null` | `null` | Callback function executed when the toast is clicked.                                        |
 | `onShow`     | `function` or `null` | `null` | Callback function executed when the toast appears (after it's added to the DOM and shown).   |
