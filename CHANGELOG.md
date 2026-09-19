@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- The icon's draw animation was invisible. It started as soon as the toast was created,
+  but the toast fades in over half a second after a 100ms delay — so the drawing finished
+  at ~430ms, when the card had only just reached 90% opacity, and every user saw a
+  finished icon appear rather than one being drawn. It now waits for the card to be on
+  screen: the draw runs from ~430ms to ~860ms, against a fully visible toast.
+
 ## [6.0.0] - 2026-09-19
 
 ### Changed

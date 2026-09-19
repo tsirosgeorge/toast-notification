@@ -396,13 +396,25 @@
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-dasharray: var(--ts-len);
-    animation: ts-toast-draw 420ms ease-out 1 both;
+    /* Undrawn until the toast is actually on screen. */
+    stroke-dashoffset: var(--ts-len);
 }
 
 .ts-toast-icon .ts-toast-dot {
     fill: var(--toast-glyph-color, #fff);
     transform-origin: center;
-    animation: ts-toast-pop 420ms ease-out 1 both;
+    opacity: 0;
+}
+
+/* The draw waits for ts-toast-show, then for the card to finish fading in. Started on
+   creation instead, the whole animation ran behind an invisible toast: it was over by
+   430ms, when the toast had only just reached 90% opacity, so nobody ever saw it. */
+.ts-toast-show .ts-toast-icon .ts-toast-glyph {
+    animation: ts-toast-draw 450ms ease-out 260ms 1 both;
+}
+
+.ts-toast-show .ts-toast-icon .ts-toast-dot {
+    animation: ts-toast-pop 450ms ease-out 260ms 1 both;
 }
 
 @keyframes ts-toast-draw {
@@ -417,9 +429,10 @@
 
 /* Someone who asked for less motion gets the finished icon, not a drawing of it. */
 @media (prefers-reduced-motion: reduce) {
-    .ts-toast-icon .ts-toast-glyph,
-    .ts-toast-icon .ts-toast-dot { animation: none; }
+    .ts-toast-show .ts-toast-icon .ts-toast-glyph,
+    .ts-toast-show .ts-toast-icon .ts-toast-dot { animation: none; }
     .ts-toast-icon .ts-toast-glyph { stroke-dashoffset: 0; }
+    .ts-toast-icon .ts-toast-dot { opacity: 1; }
 }
 
 /* Icon colours, matching the palette of the GIFs these replaced. */

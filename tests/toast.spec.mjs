@@ -158,3 +158,27 @@ test('error and warning toasts are announced assertively', async ({ page }) => {
   await expect(page.locator('.ts-toast-error')).toHaveAttribute('role', 'alert');
   await expect(page.locator('.ts-toast-container')).toHaveAttribute('aria-live', 'polite');
 });
+
+test('the icon draws while the toast is visible, not behind it', async ({ page }) => {
+  const frames = await page.evaluate(async () => {
+    toast.success('x', { duration: 0 });
+    const out = [];
+    for (let i = 0; i < 16; i++) {
+      await new Promise((r) => setTimeout(r, 60));
+      const el = document.querySelector('.ts-toast');
+      const glyph = el.querySelector('.ts-toast-glyph');
+      out.push({
+        opacity: parseFloat(getComputedStyle(el).opacity),
+        offset: parseFloat(getComputedStyle(glyph).strokeDashoffset),
+      });
+    }
+    return out;
+  });
+
+  // The draw ran entirely behind an invisible card once; it must overlap a card the
+  // user can actually see.
+  const drawingWhileVisible = frames.filter((f) => f.offset > 0.5 && f.opacity > 0.9);
+  expect(drawingWhileVisible.length).toBeGreaterThan(0);
+
+  expect(frames[frames.length - 1].offset).toBeCloseTo(0, 1);   // and it finishes
+});
