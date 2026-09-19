@@ -6,8 +6,15 @@
 <title>Toast Notification — a tiny toast & confirm library</title>
 <meta name="description" content="Playground for @tsirosgeorge/toastnotification: toasts, confirm dialogs and prompts in a few lines of JavaScript.">
 
-<!-- Serve the library's CSS and icons from this folder so the demo runs offline. -->
-<script>window.TS_TOAST_ASSET_BASE = '.';</script>
+<!-- Serve the library's icons from this folder so the demo runs offline and always
+     shows the code in this repo rather than the last published release. -->
+<script>
+  window.TS_TOAST_ASSET_BASE = '.';
+  // toast.min.css is a build artefact and is gitignored, so it does not exist on
+  // GitHub Pages. Load the unminified stylesheet that is committed instead.
+  window.TS_TOAST_NO_CSS = true;
+</script>
+<link rel="stylesheet" href="assets/css/toast.css">
 
 <style>
 :root {
