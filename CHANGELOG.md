@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [6.0.1] - 2026-09-19
 
 ### Fixed
 - The icon's draw animation was invisible. It started as soon as the toast was created,

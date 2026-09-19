@@ -2,7 +2,7 @@
 
 // Single source of truth for the CDN this build points at.
 // `npm run sync:version` rewrites it from package.json, so it can never go stale.
-const TS_TOAST_VERSION = "6.0.0";
+const TS_TOAST_VERSION = "6.0.1";
 // Point this at your own copy of assets/ to self-host the CSS and icons
 // (useful offline, behind a strict CSP, or when you don't want a CDN dependency):
 //   window.TS_TOAST_ASSET_BASE = '/vendor/toastnotification';
