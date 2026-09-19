@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [5.6.0] - 2026-09-19
 
 ### Added
 - `pauseOnHover` (default `true`): the countdown freezes while the pointer or keyboard
